@@ -308,15 +308,17 @@ class OCStudySubjectWsService():
         result = str(response.result)
         return studySubjects
 
-    def create(self, studySubject, study, studySite):
+    def create(self, studySubject, study, metadata=None):
         """Create new StudySubject in OpenClinica
         """
         result = ""
 
+        #TODO: depending on metadata (secondaryLabel, uniqueIdentifier, dateOfBirth, yearOfBirth, siteIdentifier (multicentric?))
+
         params = SimpleXMLElement("""<?xml version="1.0" encoding="UTF-8"?>
             <createRequest>
             <v1:studySubject xmlns:v1="http://openclinica.org/ws/studySubject/v1">
-            <bean:label xmlns:bean="http://openclinica.org/ws/beans">""" + "" + """</bean:label>
+            <bean:label xmlns:bean="http://openclinica.org/ws/beans">""" + studySubject.label + """</bean:label>
             <bean:enrollmentDate xmlns:bean="http://openclinica.org/ws/beans">
             """ + studySubject.enrollmentDate.isoformat() + """
             </bean:enrollmentDate>
@@ -326,9 +328,6 @@ class OCStudySubjectWsService():
             </bean:subject>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
             <bean:identifier>""" + study.identifier() + """</bean:identifier>
-            <bean:siteRef>
-            <bean:identifier>""" + studySite.identifier + """</bean:identifier>
-            </bean:siteRef>
             </bean:studyRef>
             </v1:studySubject>
             </createRequest>""")
@@ -338,22 +337,19 @@ class OCStudySubjectWsService():
         result = str(response.result)
         return result
 
-    def isStudySubject(self, studySubject, study, studySite):
+    def isStudySubject(self, studySubject, study):
         """Check if subject exists in study searching criteria is  StudySubject ID
         """
         result = ""
 
         params = SimpleXMLElement("""<?xml version="1.0" encoding="UTF-8"?>
             <isStudySubjectRequest>
-            <v1:studySubject>
+            <v1:studySubject xmlns:v1="http://openclinica.org/ws/studySubject/v1">
             <bean:label xmlns:bean="http://openclinica.org/ws/beans">
             """ + studySubject.label + """
             </bean:label>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
             <bean:identifier>""" + study.identifier() + """</bean:identifier>
-            <bean:siteRef>
-            <bean:identifier>""" + studySite.identifier + """</bean:identifier>
-            </bean:siteRef>
             </bean:studyRef>
             </v1:studySubject>
             </isStudySubjectRequest>""")
@@ -361,6 +357,7 @@ class OCStudySubjectWsService():
         response = self.client.call('isStudySubjectRequest', params)
 
         result = str(response.result)
+
         return result
 
     def loadEventsFromMetadata(self, metadata):

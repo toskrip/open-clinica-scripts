@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- The icon can be used freely in both personal and commercial projects with no attribution required, but always appreciated. 
+You may NOT sub-license, resell, rent, redistribute or otherwise transfer the icon without express written permission from iconmonstr.com -->
+
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="512px" height="512px" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve">
+<path id="calendar-8-icon" d="M285.548,114.214V68.485c0-10.035,8.136-18.17,18.171-18.17s18.17,8.135,18.17,18.17v45.729
+	c0,10.035-8.135,18.17-18.17,18.17S285.548,124.249,285.548,114.214z M141.219,132.302c10.034,0,18.17-8.137,18.17-18.172V68.403
+	c0-10.035-8.136-18.172-18.17-18.172c-10.036,0-18.171,8.137-18.171,18.172v45.727C123.048,124.165,131.183,132.302,141.219,132.302
+	z M419.5,127.278V426.61h-328v35.158h363v-334.49H419.5z M386.5,394.917h-329V94.933h43.585v18.533
+	c0,22.131,18.004,40.135,40.134,40.135c22.129,0,40.133-18.004,40.133-40.135V94.933h82.233v18.617
+	c0,22.129,18.004,40.133,40.134,40.133c22.129,0,40.133-18.004,40.133-40.133V94.933H386.5V394.917z M168.332,284.263h-51.45v51.453
+	h51.45V284.263z M168.332,207.146h-51.45v51.451h51.45V207.146z M248.069,284.263h-51.45v51.453h51.45V284.263z M248.069,207.146
+	h-51.45v51.451h51.45V207.146z M327.806,284.263h-51.449v51.453h51.449V284.263z M327.808,207.146h-51.451v51.451h51.451V207.146z"
+	/>
+</svg>

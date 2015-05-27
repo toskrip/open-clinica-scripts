@@ -212,3 +212,9 @@ class Event():
                 break
 
         return result
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<Scheduled event edoid: %s, date: %s at %s>" % (self.eventDefinitionOID, self.startDate, adr)

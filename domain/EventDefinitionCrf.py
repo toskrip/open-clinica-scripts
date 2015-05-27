@@ -37,8 +37,7 @@ class EventDefinitionCrf():
     def setOid(self, oidValue):
         """OID Setter
         """
-        if self.__oid != oidValue:
-            self.__oid = oidValue
+        self.__oid = oidValue
 
 
     def name(self):
@@ -50,8 +49,7 @@ class EventDefinitionCrf():
     def setName(self, nameValue):
         """Name Setter
         """
-        if self.__name != nameValue:
-            self.__name = nameValue
+        self.__name = nameValue
 
 
     def repeating(self):
@@ -63,8 +61,7 @@ class EventDefinitionCrf():
     def setRepeating(self, repeatingValue):
         """Repeating Setter
         """
-        if self.__repeating != repeatingValue:
-            self.__repeating = repeatingValue
+        self.__repeating = repeatingValue
 
 
     def required(self):
@@ -102,4 +99,10 @@ class EventDefinitionCrf():
     def atrSize(self):
         "Visible attributes in import table view"
         return 3
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<Event Def CRF oid: %s, name: %s at %s>" % (self.oid(), self.name(), adr)
 

@@ -6,22 +6,22 @@ class StudySubject():
     #-------------------- Constuctor -----------------------------------
 
     def __init__(self, label="", secondaryLabel="", enrollmentDate="", subject=None, events=[]):
-        """Concsturoctor
+        """Default Constructor
         """
         # OC OID like SS_afasdf
         self._oid = ""
 
         # StudySubjectID - depend on study paramenter configuration (can be generated automatically)
-        self.__label = label
+        self._label = label
 
         # Optional - if some kind of secondary ID has to be stored
-        self.__secondaryLabel = secondaryLabel
+        self._secondaryLabel = secondaryLabel
 
         # ISO date string of enrollment of subject to the study
-        self.__enrollmentDate = enrollmentDate
+        self._enrollmentDate = enrollmentDate
 
-        self.__subject = subject
-        self.__events = events
+        self._subject = subject
+        self._events = events
 
     #-------------------------------------------------------------------
     #-------------------- Properties -----------------------------------
@@ -34,54 +34,64 @@ class StudySubject():
     def oid(self, value):
         self._oid = value
 
+    @property
     def label(self):
-        return self.__label
+        return self._label
+
+    @label.setter
+    def label(self, value):
+        self._label = value
 
     def secondaryLabel(self):
-        return self.__secondaryLabel
+        return self._secondaryLabel
 
     @property
     def enrollmentDate(self):
         """Enrollment date Getter
         ISO formated string
         """
-        return self.__enrollmentDate
+        return self._enrollmentDate
 
     @enrollmentDate.setter
     def enrollmentDate(self, enrollmentDateValue):
         """Enrollment date Setter
         """
-        if self.__enrollmentDate != enrollmentDateValue:
-            # TODO: check validity of enrollmentDateValue
-            self.__enrollmentDate = enrollmentDateValue
+        # TODO: check validity of enrollmentDateValue
+        self._enrollmentDate = enrollmentDateValue
 
     @property
     def subject(self):
         """Subject Getter
         """
-        return self.__subject
+        return self._subject
 
     @subject.setter
     def subject(self, subjectRef):
         """Subject Setter
         """
-        self.__subject = subjectRef
+        self._subject = subjectRef
 
     @property
     def events(self):
         """Subject events Getter
         """
-        return self.__events
+        return self._events
 
     @events.setter
     def events(self, eventList):
         """Subject events Setter
         """
-        self.__events = eventList
+        self._events = eventList
 
     #-------------------------------------------------------------------
     #----------------------- Methods -----------------------------------
 
     def atrSize(self):
         return 3
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<StudySubject oid: %s, ssid: %s at %s>" % (self.oid, self.label, adr)
 

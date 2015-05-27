@@ -11,11 +11,11 @@ class Crf():
     This is CRF form associated to concrete study event
     """
 
-    def __init__(self):
+    def __init__(self, oid="", name=""):
         """Default constructor
         """
-        self._oid = ""
-        self._name = ""
+        self._oid = oid
+        self._name = name
         self._version = ""
         self._status = ""
         self._isDefaultVersion = False
@@ -114,3 +114,9 @@ class Crf():
         """Number of showable arguments
         """
         return 2
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<CRF oid: %s, name: %s at %s>" % (self.oid, self.name, adr)

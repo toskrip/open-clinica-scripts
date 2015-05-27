@@ -13,6 +13,9 @@ import os
 import logging
 import logging.config
 
+# PyQt
+from PyQt4 import QtCore
+
 # HTTP
 import requests
 from requests.auth import HTTPBasicAuth
@@ -45,7 +48,7 @@ from utils.JsonSerializer import JsonSerializer
 class HttpConnectionService(object):
     """HTTP connection service
     """
-
+    
     def __init__(self, ip, port, userDetails):
         """Default constructor
         """
@@ -56,7 +59,6 @@ class HttpConnectionService(object):
         self.__ip = ip
         self.__port = port
         self.__userDetails = userDetails
-        self.__application = ""
 
         # Proxy settings
         self._proxyEnabled = False
@@ -103,19 +105,6 @@ class HttpConnectionService(object):
         if self.__port != value:
             self.__port = value
 
-    @property
-    def application(self):
-        """Application Getter
-        """
-        return self.__application
-
-    @application.setter
-    def application(self, value):
-        """Application Setter
-        """
-        if self.__application != value:
-            self.__application = "/" + value
-
 ##     ## ######## ######## ##     ##  #######  ########   ######  
 ###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
 #### #### ##          ##    ##     ## ##     ## ##     ## ##       
@@ -149,9 +138,13 @@ class HttpConnectionService(object):
 ##     ## ##    ##    ##    ## ##     ## ##     ## ##    ## ##       ##    ##    ##    
  #######   ######      ######   #######  ########   ######  ########  ######     ##    
 
-    def getStudyCasebookSubjects(self, ocBaseUrl, studyOid):
+    def getStudyCasebookSubjects(self, data, thread=None):
         """Get study casebook subjects
         """
+        if data:
+            ocBaseUrl = data[0]
+            studyOid = data[1]
+
         method = studyOid + "/*/*/*"
         results = []
 
@@ -180,6 +173,34 @@ class HttpConnectionService(object):
                         subject.uniqueIdentifier = subj["@OpenClinica:UniqueIdentifier"]
                     results.append(subject)
 
+        if thread:
+            thread.emit(QtCore.SIGNAL("finished(QVariant)"), results)
+            return None
+        else:
+            return results
+
+    def getStudyCasebookSubject(self, ocBaseUrl, studyOid, subjectId):
+        """Get casebook of one subject
+        SubjectId can be StudySubjectOID (SS_) or StudySubjectID (in new version of OC)
+        """
+        method = studyOid + "/" + subjectId + "/*/*"
+        results = None
+
+        r = self._ocRequest(ocBaseUrl, method)
+
+        if r.status_code == 200:
+            if "ClinicalData" in r.json():
+                subjectData = r.json()["ClinicalData"]["SubjectData"]
+                # Exactly one subject should be reported
+                if type(subjectData) is dict:
+                    subj = subjectData
+                    subject = Subject()
+                    subject.oid = subj["@SubjectKey"]
+                    subject.studySubjectId = subj["@OpenClinica:StudySubjectID"]
+                    if "@OpenClinica:UniqueIdentifier" in subj:
+                        subject.uniqueIdentifier = subj["@OpenClinica:UniqueIdentifier"]
+                    results.append(subject)
+
         return results
 
  #######   ######     ######## ##     ## ######## ##    ## ######## 
@@ -190,9 +211,14 @@ class HttpConnectionService(object):
 ##     ## ##    ##    ##         ## ##   ##       ##   ###    ##    
  #######   ######     ########    ###    ######## ##    ##    ##    
 
-    def getStudyCasebookEvents(self, ocBaseUrl, studyOid, subjectOid):
+    def getStudyCasebookEvents(self, data, thread=None):
         """Get study casebook subject events
         """
+        if data:
+            ocBaseUrl = data[0]
+            studyOid = data[1]
+            subjectOid = data[2]
+
         method = studyOid + "/" + subjectOid + "/*/*"
         results = []
 
@@ -372,7 +398,11 @@ class HttpConnectionService(object):
 
                             results.append(event)
 
-        return results
+        if thread:
+            thread.emit(QtCore.SIGNAL("finished(QVariant)"), results)
+            return None
+        else:
+            return results
 
 ########  ########  #### ##     ##    ###    ######## ######## 
 ##     ## ##     ##  ##  ##     ##   ## ##      ##    ##       
@@ -380,72 +410,7 @@ class HttpConnectionService(object):
 ########  ########   ##  ##     ## ##     ##    ##    ######   
 ##        ##   ##    ##   ##   ##  #########    ##    ##       
 ##        ##    ##   ##    ## ##   ##     ##    ##    ##       
-##        ##     ## ####    ###    ##     ##    ##    ######## 
-
-    def _getRequest(self, method):
-        """Generic GET request to RadPlanBio server
-        """
-        contentLength = 0
-        body = None
-
-        site = "MySiteForAuthorisation"
-
-        s = requests.Session()
-        s.headers.update({ "Content-Type": "application/json",  "Content-Length": contentLength, "Site": site, "Username" : self.__userDetails.username, "Password" : self.__userDetails.password })
-
-        auth = None
-        if self._proxyAuthEnabled:
-            auth = HTTPBasicAuth(self._proxyAuthLogin, self._proxyAuthPassword)
-            self._logger.info("Connecting with authentication: " + str(self._proxyAuthLogin))
-
-        # Application proxy enabled
-        if self._proxyEnabled:
-            if self._noProxy != "" and self._noProxy is not whitespace and self._noProxy in "https://" + self.__ip:
-                self._logger.info("Connecting without proxy because of no proxy: " + self._noProxy)
-                r = s.get("https://" + self.__ip + ":" + str(self.__port) + self.__application + method.encode("utf-8"), auth=auth, verify=False, proxies={})
-            else:
-                proxies = { "http" : "http://" + self._proxyHost + ":" + self._proxyPort, "https" : "https://" + self._proxyHost + ":" + self._proxyPort}
-                self._logger.info("Connecting with application defined proxy: " + str(proxies))
-                r = s.get("https://" + self.__ip + ":" + str(self.__port) + self.__application + method.encode("utf-8"), auth=auth, verify=False, proxies=proxies)
-        # Use system proxy
-        else:
-            proxies = requests.utils.get_environ_proxies("https://" + self.__ip)
-            self._logger.info("Using system proxy variables (no proxy applied): " + str(proxies))
-            r = s.get("https://" + self.__ip + ":" + str(self.__port) + self.__application + method.encode("utf-8"), auth=auth, verify=False, proxies=proxies)
-
-        return r
-
-    def _postRequest(self, method, body, contentType):
-        """Generic POST request to RadPlanBio server
-        """
-        contentLength = len(body)
-
-        site = "MySiteForAuthorisation"
-
-        s = requests.Session()
-        s.headers.update({ "Content-Type": contentType,  "Content-Length": contentLength, "Site": site, "Username" : self.__userDetails.username, "Password" : self.__userDetails.password })
-
-        auth = None
-        if self._proxyAuthEnabled:
-            auth = HTTPBasicAuth(self._proxyAuthLogin, self._proxyAuthPassword)
-            self._logger.info("Connecting with authentication: " + str(self._proxyAuthLogin))
-
-        # Application proxy enabled
-        if self._proxyEnabled:
-            if self._noProxy != "" and self._noProxy is not whitespace and self._noProxy in "https://" + self.__ip:
-                self._logger.info("Connecting without proxy because of no proxy: " + self._noProxy)
-                r = s.post("https://" + self.__ip + ":" + str(self.__port) + self.__application + method.encode("utf-8"), auth=auth, data=body, verify=False, proxies={})
-            else:
-                proxies = { "http" : "http://" + self._proxyHost + ":" + self._proxyPort, "https" : "https://" + self._proxyHost + ":" + self._proxyPort}
-                self._logger.info("Connecting with application defined proxy: " + str(proxies))
-                r = s.post("https://" + self.__ip + ":" + str(self.__port) + self.__application + method.encode("utf-8"), auth=auth, data=body, verify=False, proxies=proxies)
-        # Use system proxy
-        else:
-            proxies = requests.utils.get_environ_proxies("https://" + self.__ip)
-            self._logger.info("Using system proxy variables (no proxy applied): " + str(proxies))
-            r = s.post("https://" + self.__ip + ":" + str(self.__port) + self.__application + method.encode("utf-8"), auth=auth, data=body, verify=False, proxies=proxies)
-
-        return r        
+##        ##     ## ####    ###    ##     ##    ##    ########   
 
     def _ocRequest(self, ocBaseUrl, method):
         """Generic OpenClinica (restfull URL) GET request

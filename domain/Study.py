@@ -96,3 +96,9 @@ class Study():
         """Visible attributes in import tableView
         """
         return 3
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<Study %s at %s>" % (self.__identifier, adr)

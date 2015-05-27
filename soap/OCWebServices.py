@@ -23,11 +23,11 @@ import OCConnectInfo
 import socks
 
 # Services
-from services.OCDataWsService import OCDataWsService
-from services.OCEventWsService import OCEventWsService
-from services.OCStudyEventDefinitionWsService import OCStudyEventDefinitionWsService
-from services.OCStudySubjectWsService import OCStudySubjectWsService
-from services.OCStudyWsService import OCStudyWsService
+from soap.OCDataWsService import OCDataWsService
+from soap.OCEventWsService import OCEventWsService
+from soap.OCStudyEventDefinitionWsService import OCStudyEventDefinitionWsService
+from soap.OCStudySubjectWsService import OCStudySubjectWsService
+from soap.OCStudyWsService import OCStudyWsService
 
  ######   #######  ##    ##  ######  ########  ######  
 ##    ## ##     ## ###   ## ##    ##    ##    ##    ## 
@@ -202,27 +202,27 @@ class OCWebServices():
             return result
 
 
-    def createStudySubject(self, studySubject, study, studySite):
+    def createStudySubject(self, studySubject, study, studySite=None, metedata=None):
         """Create new StudySubject entity in OC
         """
-        return self.studySubjectBinding.create(studySubject, study, studySite)
+        return self.studySubjectBinding.create(studySubject, study)
 
 
-    def isStudySbuject(self, studySubject, study, studySite):
+    def isStudySbuject(self, studySubject, study, studySite= None):
         """Checks if the specified subject belgons to OC studySbujects
         """
-        return self.studySubjectBinding.isStudySbuject(studySubject)
+        return self.studySubjectBinding.isStudySubject(studySubject, study)
 
     #----------------------------------------------------------------------
     #----------------------------- Study Event ----------------------------
 
-    def scheduleStudyEvent(self, study, site, studySubject, event):
+    def scheduleStudyEvent(self, study, studySubject, event):
         """Schedule study event for studySbuject
         """
         successful = False
         result = ""
 
-        result = self.eventBinding.schedule(study, site, studySubject, event)
+        result = self.eventBinding.schedule(study, studySubject, event)
 
         if result == STATUSSUCCCESS:
             successful = True

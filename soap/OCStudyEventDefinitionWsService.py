@@ -123,14 +123,21 @@ class OCStudyEventDefinitionWsService():
                 hideCrf = str(eventDefinitionCrf.hideCrf)
                 sourceDataVerificaiton = str(eventDefinitionCrf.sourceDataVerificaiton)
 
-                crfOid  = str(eventDefinitionCrf.crf.oid)
-                crfName = str(eventDefinitionCrf.crf.name)
-                obtainedCrf = Crf(crfOid, crfName)
-
-                defaultCrfVersionOid = str(eventDefinitionCrf.defaultCrfVersion.oid)
-                defaultCrfVersionName = str(eventDefinitionCrf.defaultCrfVersion.name)
-
-                obtainedDefaultCrfVersion = CrfVersion(defaultCrfVersionOid, defaultCrfVersionName)
+                # Ugly but it works
+                index = 0
+                defaultCrfVersionOid = None
+                obtainedDefaultCrfVersion = None
+                for ch in eventDefinitionCrf.children():
+                    if ch.children():
+                        if index == 0:
+                            crfOid  = str(ch.oid)
+                            crfName = str(ch.name)
+                            obtainedCrf = Crf(crfOid, crfName)            
+                        elif index == 1:
+                            defaultCrfVersionOid = str(ch.oid)
+                            defaultCrfVersionName = str(ch.name)
+                            obtainedDefaultCrfVersion = CrfVersion(defaultCrfVersionOid, defaultCrfVersionName)
+                        index = index + 1
 
                 obtainedEventDefinitionCrf = EventDefinitionCrf(required,
                     doubleDataEntry,

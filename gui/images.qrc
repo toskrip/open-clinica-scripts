@@ -1,0 +1,22 @@
+<RCC>
+  <qresource prefix="/images">
+    <file alias='new.png'>../resources/images/iconmonstr-add-file-2-icon.png</file>
+    <file alias='save.png'>../resources/images/iconmonstr-save-2-icon.png</file>
+    <file alias='reload.png'>../resources/images/iconmonstr-refresh-3-icon.png</file>
+    <file alias='delete.png'>../resources/images/iconmonstr-trash-can-2-icon.png</file>
+
+    <file alias='download.png'>../resources/images/iconmonstr-download-10-icon.png</file>
+    <file alias='upload.png'>../resources/images/iconmonstr-upload-11-icon.png</file>
+    <file alias='constant.png'>../resources/images/iconmonstr-password-5-icon.png</file>
+    <file alias='pullDataRequest.png'>../resources/images/iconmonstr-shipping-box-13-icon.png</file>
+    <file alias='createSubject.png'>../resources/images/iconmonstr-user-11-icon.png</file>
+    <file alias='localDicomUpload.png'>../resources/images/iconmonstr-upload-3-icon.png</file>
+
+    <file alias='x-mark.png'>../resources/images/iconmonstr-x-mark-3-icon.png</file>
+    <file alias='help.png'>../resources/images/iconmonstr-lifebuoy-2-icon.png</file>
+    <file alias='rpb-icon.jpg'>../resources/images/rpb-icon.jpg</file>
+    <file alias='login.png'>../resources/images/iconmonstr-key-2-icon.png</file>
+    <file alias='config.png'>../resources/images/iconmonstr-control-panel-8-icon-256.png</file>
+    <file alias='upgrade.png'>../resources/images/iconmonstr-refresh-2-icon-256.png</file>
+  </qresource>
+</RCC>

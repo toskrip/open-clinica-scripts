@@ -85,7 +85,7 @@ class OCEventWsService():
             }
         }
 
-    def schedule(self, study, site, studySubject, event):
+    def schedule(self, study, studySubject, event):
         """Shedule study event for specified study subject
         """
         result = ""
@@ -94,16 +94,12 @@ class OCEventWsService():
             <scheduleRequest>
             <v1:event xmlns:v1="http://openclinica.org/ws/event/v1">
             <bean:studySubjectRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:label>""" + studySubject.label()  + """</bean:label>
+            <bean:label>""" + studySubject.label  + """</bean:label>
             </bean:studySubjectRef>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
             <bean:identifier>""" + study.identifier() + """</bean:identifier>
-            <bean:siteRef>
-            <bean:identifier>""" + site.identifier + """</bean:identifier>
-            </bean:siteRef>
             </bean:studyRef>
             <bean:eventDefinitionOID xmlns:bean="http://openclinica.org/ws/beans">""" +  event.oid() + """</bean:eventDefinitionOID>
-            <bean:location xmlns:bean="http://openclinica.org/ws/beans">""" + site.name + """</bean:location>
             <bean:startDate xmlns:bean="http://openclinica.org/ws/beans">""" + datetime.strftime(datetime.now(), "%Y-%m-%d") + """</bean:startDate>
             </v1:event>
             </scheduleRequest>""")

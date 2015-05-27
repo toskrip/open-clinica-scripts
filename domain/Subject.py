@@ -13,7 +13,7 @@ class Subject():
         # OC OID
         self._oid = ""
         # OC StudySubjectID
-        self.studySubjectId = ""
+        self._studySubjectId = ""
         # OC Person ID (PID)
         self.__uniqueIdentifier = uniqueIdentifier
 
@@ -81,9 +81,6 @@ class Subject():
         """
         return self.__person
 
-
-
-
     @person.setter
     def person(self, personRef):
         """Person Setter
@@ -101,3 +98,9 @@ class Subject():
 
     def atrSize(self):
         return 2
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<StudySubject oid: %s, ssid: %s at %s>" % (self.oid, self.studySubjectId, adr)

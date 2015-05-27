@@ -1,5 +1,12 @@
-import hashlib
+#### ##     ## ########   #######  ########  ########  ######
+ ##  ###   ### ##     ## ##     ## ##     ##    ##    ##    ##
+ ##  #### #### ##     ## ##     ## ##     ##    ##    ##
+ ##  ## ### ## ########  ##     ## ########     ##     ######
+ ##  ##     ## ##        ##     ## ##   ##      ##          ##
+ ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
+#### ##     ## ##         #######  ##     ##    ##     ######
 
+import hashlib
 
 class OCConnectInfo():
     """Connection detail for OC SOAP web services
@@ -18,9 +25,7 @@ class OCConnectInfo():
         self.passwordHash = passwordHash
 
         # When the URL does not end with '/', add the character to URL
-
         if baseUrl[-1] != '/' : self.baseUrl = baseUrl + "/"
-
 
     def __init__(self, baseUrl, userName):
         """Constructor
@@ -34,7 +39,6 @@ class OCConnectInfo():
         # When the URL does not end with '/', add the character to URL
         if baseUrl[-1] != '/' : self.baseUrl = baseUrl + "/"
 
-
     def setPassword(self, password):
         """ Perform sha1 hash
         """
@@ -46,10 +50,8 @@ class OCConnectInfo():
             except:
                 print "[Ecxeption]: during generation of sha1 password hash"
 
-
     def setPasswordHash(self, passwordHash):
         self.passwordHash = passwordHash
-
 
     def __str__(self):
         """ToString
@@ -57,4 +59,3 @@ class OCConnectInfo():
         Print the class itself
         """
         print "OCConnectInfo:\n baseUrl: " + self.baseUrl + "\nuserName: " + self.userName + "\npasswordHash: " + passwordHash
-

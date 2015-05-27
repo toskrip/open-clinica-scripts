@@ -18,7 +18,6 @@ from domain.Item import Item
 from domain.Study import Study
 from domain.StudyEventDefinition import StudyEventDefinition
 
-
 # Domain
 # Preffer C accelerated version of ElementTree for XML parsing
 try:

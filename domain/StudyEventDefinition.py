@@ -119,3 +119,8 @@ class StudyEventDefinition():
         "Visible attributes in import table view"
         return 2
 
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<StudyEventDefinition oid: %s, name: %s at %s>" % (self.oid(), self.name(), adr)
