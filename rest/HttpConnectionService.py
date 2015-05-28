@@ -33,6 +33,7 @@ import json
 from domain.Subject import Subject
 from domain.Event import Event
 from domain.Crf import Crf
+from domain.ItemGroup import ItemGroup
 from domain.Item import Item
 
  ######  ######## ########  ##     ## ####  ######  ########
@@ -334,26 +335,56 @@ class HttpConnectionService(object):
                                 if type(itemGroupDefinition) is list:
                                     for igd in itemGroupDefinition:
                                         if igd["@OID"] in itemGroupOids:
-                                            
+                                            crf = event.getCrf(
+                                                igd["OpenClinica:ItemGroupDetails"]["OpenClinica:PresentInForm"]["@FormOID"]
+                                            )
+
+                                            group = ItemGroup()
+                                            group.oid = igd["@OID"]
+                                            group.name = igd["@Name"]
+
                                             iRef = igd["ItemRef"]
                                             if type(iRef) is list:
                                                 for ir in iRef:
+                                                    item = Item()
+                                                    item.oid = ir["@ItemOID"]
+                                                    group.addItem(item)
                                                     itemOids.append(ir["@ItemOID"])
                                             elif type(iRef) is dict:
                                                 ir = iRef
+                                                item = Item()
+                                                item.oid = ir["@ItemOID"]
+                                                group.addItem(item)
                                                 itemOids.append(ir["@ItemOID"])
+
+                                            crf.addItemGroup(group)
 
                                 elif type(itemGroupDefinition) is dict:
                                     igd = itemGroupDefinition
                                     if igd["@OID"] in itemGroupOids:
-                                        
+                                        crf = event.getCrf(
+                                            igd["OpenClinica:ItemGroupDetails"]["OpenClinica:PresentInForm"]["@FormOID"]
+                                        )
+
+                                        group = ItemGroup()
+                                        group.oid = igd["@OID"]
+                                        group.name = igd["@Name"]
+
                                         iRef = igd["ItemRef"]
                                         if type(iRef) is list:
                                             for ir in iRef:
+                                                item = Item()
+                                                item.oid = ir["@ItemOID"]
+                                                group.addItem(item)
                                                 itemOids.append(ir["@ItemOID"])
                                         elif type(iRef) is dict:
                                             ir = iRef
+                                            item = Item()
+                                            item.oid = ir["@ItemOID"]
+                                            group.addItem(item)
                                             itemOids.append(ir["@ItemOID"])
+
+                                        crf.addItemGroup(group)
 
                                 # Setup items for CRF in event
                                 itemDefinition = r.json()["Study"]["MetaDataVersion"]["ItemDef"]
@@ -368,6 +399,9 @@ class HttpConnectionService(object):
                                             item.dataType = itemDef["@DataType"]
                                             item.description = itemDef["@Comment"]
                                             
+                                            gr = crf.findGroupForItem(item.oid)
+                                            item.itemGroupOid = gr.oid
+
                                             crf.items.append(item)
 
                                 elif type(itemDefinition) is dict:
@@ -381,6 +415,9 @@ class HttpConnectionService(object):
                                         item.dataType = itemDef["@DataType"]
                                         item.description = itemDef["@Comment"]
                                         
+                                        gr = crf.findGroupForItem(item.oid)
+                                        item.itemGroupOid = gr.oid
+
                                         crf.items.append(item)
 
 
@@ -493,25 +530,57 @@ class HttpConnectionService(object):
                                 for igd in itemGroupDefinition:
                                     if igd["@OID"] in itemGroupOids:
                                         
+                                        crf = event.getCrf(
+                                            igd["OpenClinica:ItemGroupDetails"]["OpenClinica:PresentInForm"]["@FormOID"]
+                                        )
+
+                                        group = ItemGroup()
+                                        group.oid = igd["@OID"]
+                                        group.name = igd["@Name"]
+
                                         iRef = igd["ItemRef"]
                                         if type(iRef) is list:
                                             for ir in iRef:
+                                                item = Item()
+                                                item.oid = ir["@ItemOID"]
+                                                group.addItem(item)
                                                 itemOids.append(ir["@ItemOID"])
                                         elif type(iRef) is dict:
                                             ir = iRef
+                                            item = Item()
+                                            item.oid = ir["@ItemOID"]
+                                            group.addItem(item)
                                             itemOids.append(ir["@ItemOID"])
+
+                                        crf.addItemGroup(group)
 
                             elif type(itemGroupDefinition) is dict:
                                 igd = itemGroupDefinition
                                 if igd["@OID"] in itemGroupOids:
+
+                                    crf = event.getCrf(
+                                        igd["OpenClinica:ItemGroupDetails"]["OpenClinica:PresentInForm"]["@FormOID"]
+                                    )
                                     
+                                    group = ItemGroup()
+                                    group.oid = igd["@OID"]
+                                    group.name = igd["@Name"]
+
                                     iRef = igd["ItemRef"]
                                     if type(iRef) is list:
                                         for ir in iRef:
+                                            item = Item()
+                                            item.oid = ir["@ItemOID"]
+                                            group.addItem(item)
                                             itemOids.append(ir["@ItemOID"])
                                     elif type(iRef) is dict:
                                         ir = iRef
+                                        item = Item()
+                                        item.oid = ir["@ItemOID"]
+                                        group.addItem(item)
                                         itemOids.append(ir["@ItemOID"])
+
+                                    crf.addItemGroup(group)
 
                             # Setup items for CRF in event
                             itemDefinition = r.json()["Study"]["MetaDataVersion"]["ItemDef"]
@@ -525,6 +594,9 @@ class HttpConnectionService(object):
                                         item.name = itemDef["@Name"]
                                         item.dataType = itemDef["@DataType"]
                                         item.description = itemDef["@Comment"]
+
+                                        gr = crf.findGroupForItem(item.oid)
+                                        item.itemGroupOid = gr.oid
                                         
                                         crf.items.append(item)
 
@@ -539,6 +611,9 @@ class HttpConnectionService(object):
                                     item.dataType = itemDef["@DataType"]
                                     item.description = itemDef["@Comment"]
                                     
+                                    gr = crf.findGroupForItem(item.oid)
+                                    item.itemGroupOid = gr.oid
+
                                     crf.items.append(item)
 
                             results.append(event)

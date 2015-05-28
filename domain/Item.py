@@ -103,6 +103,18 @@ class Item():
         """
         self._value = itemValue
 
+    @property
+    def itemGroupOid(self):
+        """ItemGroupOID Getter
+        """
+        return self._itemGroupOid
+
+    @itemGroupOid.setter
+    def itemGroupOid(self, value):
+        """ItemGroupOID setter
+        """
+        self._itemGroupOid = value
+
 ##     ## ######## ######## ##     ##  #######  ########   ######  
 ###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
 #### #### ##          ##    ##     ## ##     ## ##     ## ##       

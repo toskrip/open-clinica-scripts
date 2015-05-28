@@ -282,6 +282,46 @@ class OdmFileDataService():
 
         return xmlstring
 
+    def generateOdmXmlForStudyItem(self, studyOid, subject, event, crf, item):
+        """Create the XML ODM structured data string for import
+        """
+        odm = ET.Element("ODM")
+
+        # Study - Study OID
+        clinicalData = ET.SubElement(odm, "ClinicalData")
+        clinicalData.set("StudyOID", studyOid)
+        clinicalData.set("MetaDataVersionOID", 'v1.0.0')
+
+        # Subject - Study Subject ID
+        subjectData = ET.SubElement(clinicalData, "SubjectData")
+        subjectData.set("SubjectKey", subject.oid)
+
+        # Event
+        studyEventData = ET.SubElement(subjectData, "StudyEventData")
+        studyEventData.set("StudyEventOID", event.eventDefinitionOID)
+        studyEventData.set("StudyEventRepeatKey", event.studyEventRepeatKey)
+
+        # CRF form
+        formData = ET.SubElement(studyEventData, "FormData")
+        formData.set("FormOID", crf.oid)
+
+        # Item group
+        itemGroupData = ET.SubElement(formData, "ItemGroupData")
+        itemGroupData.set("ItemGroupOID", item.itemGroupOid)
+        itemGroupData.set("TransactionType", "Insert")
+
+        # DICOM Study UID
+        itemData = ET.SubElement(itemGroupData, "ItemData")
+        itemData.set("ItemOID", item.oid)
+        itemData.set("Value", item.value)
+
+        documentTree = ET.ElementTree(odm)
+
+        xmlstring = ET.tostring(odm, encoding="UTF-8")
+        xmlstring = xmlstring.replace("<?xml version='1.0' encoding='UTF-8'?>", "")
+
+        return xmlstring
+
     def generateOdmXmlForStudyFromMetadata(self, studyOid, subject, studyEventDefinition, studyEventCrf, itemValues, metadata):
         """Obsolate: DO NOT USE!
         """

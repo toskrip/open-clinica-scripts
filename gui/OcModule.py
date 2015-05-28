@@ -24,6 +24,7 @@ from contexts.UserDetails import UserDetails
 
 # Module UI
 from gui.OcModuleUI import OcModuleUI
+from gui.ItemImportDialog import ItemImportDialog
 
 # Services
 from rest.HttpConnectionService import HttpConnectionService
@@ -572,7 +573,7 @@ class OcModule(QWidget, OcModuleUI):
 
         # Quick way of crating simple viewModel
         self.itemModel = QtGui.QStandardItemModel()
-        self.itemModel.setHorizontalHeaderLabels(["Name", "OID", "DataType", "Description"])
+        self.itemModel.setHorizontalHeaderLabels(["Name", "OID", "DataType", "Description", "ItemGroupOID"])
 
         row = 0
         for item in self._selectedCrf.items:
@@ -580,11 +581,13 @@ class OcModule(QWidget, OcModuleUI):
             oidItem = QtGui.QStandardItem(item.oid)
             dataTypeItem = QtGui.QStandardItem(item.dataType)
             descriptionItem = QtGui.QStandardItem(item.description)
+            itemGroupOidItem = QtGui.QStandardItem(item.itemGroupOid)
            
             self.itemModel.setItem(row, 0, nameItem)
             self.itemModel.setItem(row, 1, oidItem)
             self.itemModel.setItem(row, 2, dataTypeItem)
             self.itemModel.setItem(row, 3, descriptionItem)
+            self.itemModel.setItem(row, 4, itemGroupOidItem)
 
             row = row + 1
 
@@ -618,29 +621,33 @@ class OcModule(QWidget, OcModuleUI):
         self.textBrowserProgress.append("Importing data into eCRF...")
 
         # Dialog asking for value (depending on data type)
+        itemImportDialog = ItemImportDialog()
+        itemImportDialog.setModel(self._selectedItem)
 
-        # Generate ODM XML for selection
-        odm = self.svcOdm.generateOdmXmlForStudy(
-                self.getStudyOid(),
-                self._selectedStudySubject,
-                self._selectedStudyEvent,
-                reportText,
-                self._selectedCrfDicomPatientField,
-                self._selectedCrfDicomField,
-                self._selectedCrfSRTextField
-            )
+        # Show dialog
+        if itemImportDialog.exec_():
+            # Mapping will be passed to DICOM service via worker parameters
+            # Generate ODM XML for selection
 
-        self._logger.debug(odm)
+            self._selectedItem.value = itemImportDialog.item.value
+            
+            odm = self.svcOdm.generateOdmXmlForStudyItem(
+                    self.getStudyOid(),
+                    self._selectedStudySubject,
+                    self._selectedStudyEvent,
+                    self._selectedCrf,
+                    self._selectedItem
+                )
 
-        importSucessfull = self.ocWebServices.importODM(odm)
-        if importSucessfull:
-            self.textBrowserProgress.append("Import to OpenClinica sucessfull...")
-            self.ImportFinishedMessage()
-        else:
-            self.textBrowserProgress.append("Import Error. Cannot continue.")
-            self.ImportFinishedMessage()
-            return
+            self._logger.debug(odm)
 
+            importSucessfull = self.ocWebServices.importODM(odm)
+            if importSucessfull:
+                self.textBrowserProgress.append("Import to OpenClinica sucessfull...")
+            else:
+                self.textBrowserProgress.append("Import Error. Cannot continue.")
+
+        self.ImportFinishedMessage()
         return
 
     def loadStudiesFinished(self, studies):

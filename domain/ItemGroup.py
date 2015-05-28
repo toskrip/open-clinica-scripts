@@ -1,14 +1,5 @@
- ######  ########  ######## 
-##    ## ##     ## ##       
-##       ##     ## ##       
-##       ########  ######   
-##       ##   ##   ##       
-##    ## ##    ##  ##       
- ######  ##     ## ##       
-
-class Crf():
-    """Case Report Form
-    This is CRF form associated to concrete study event
+class ItemGroup():
+    """ItemGroup
     """
 
     def __init__(self, oid="", name=""):
@@ -16,11 +7,9 @@ class Crf():
         """
         self._oid = oid
         self._name = name
-        self._version = ""
-        self._status = ""
-        self._isDefaultVersion = False
+        self._repeating = ""
+        self._sasDatasetName = ""
 
-        self._itemGroups = []
         self._items = []
 
 ########  ########   #######  ########  ######## ########  ######## #### ########  ######  
@@ -61,48 +50,6 @@ class Crf():
         """
         return self._version
 
-    @version.setter
-    def version(self, value):
-        """Version Setter
-        """
-        self._version = value
-
-    @property
-    def status(self):
-        """Status Getter
-        """
-        return self._status
-
-    @status.setter
-    def status(self, value):
-        """Status Setter
-        """
-        self._status = value
-
-    @property
-    def isDefaultVersion(self):
-        """Is default CRF version Getter
-        """
-        return self._isDefaultVersion
-
-    @isDefaultVersion.setter
-    def isDefaultVersion(self, value):
-        """Is default CRF version Setter
-        """
-        self._isDefaultVersion = value
-
-    @property
-    def itemGroups(self):
-        """Item groups Getter
-        """
-        return self._itemGroups
-
-    @itemGroups.setter
-    def itemGroups(self, value):
-        """Item groups Setter
-        """
-        self._itemGroups = value
-
     @property
     def items(self):
         """
@@ -117,37 +64,24 @@ class Crf():
 ##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
 ##     ## ########    ##    ##     ##  #######  ########   ######  
 
-    def addItemGroup(self, group):
-        """Add eCRF form to the event
+    def addItem(self, item):
+        """Add eCRF item to the group
         """
-        self._itemGroups.append(group)
+        self._items.append(item)
 
-    def getItemGroup(self, groupOid):
+    def getItemG(self, itemOid):
         """
         """
         result = None
-        for group in self._itemGroups:
-            if group.oid == groupOid:
+        for item in self._items:
+            if item.oid == itemOid:
                 result = group
                 break
 
         return result
 
-    def findGroupForItem(self, itemOid):
-        """
-        """
-        result = None
-        for group in self._itemGroups:
-            for item in group.items:
-                if item.oid == itemOid:
-                    result = group
-                    break
-
-        return result
-
-
     def __repr__(self):
         """Object representation
         """
         adr = hex(id(self)).upper()
-        return "<CRF oid: %s, name: %s at %s>" % (self.oid, self.name, adr)
+        return "<Item group oid: %s, name: %s at %s>" % (self.oid, self.name, adr)
