@@ -25,9 +25,6 @@ from contexts.UserDetails import UserDetails
 # Module UI
 from gui.OcModuleUI import OcModuleUI
 
-# GUI Messages
-import gui.messages
-
 # Services
 from rest.HttpConnectionService import HttpConnectionService
 from soap.OCConnectInfo import OCConnectInfo
@@ -36,12 +33,6 @@ from odm.OdmFileDataService import OdmFileDataService
 
 # Utils
 from utils import first
-
-# View Models
-from viewModels.StudyEventDefinitionCrfTableModel import StudyEventDefinitionCrfTableModel
-from viewModels.StudyEventDefinitionTableModel import StudyEventDefinitionTableModel
-from viewModels.StudySubjectTableModel import StudySubjectTableModel
-from viewModels.StudyTableModel import StudyTableModel
 
 # Workers
 from workers.WorkerThread import WorkerThread
@@ -70,7 +61,7 @@ class OcModule(QWidget, OcModuleUI):
         self.lblSummary.hide()
 
         # Setup logger - use config file
-        self.logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__)
         logging.config.fileConfig("logging.ini", disable_existing_loggers=False)
 
         # List of worker threads
@@ -89,7 +80,7 @@ class OcModule(QWidget, OcModuleUI):
         self.lblOcConnection.setText("[" + OCUserDetails().username + "] " + ConfigDetails().ocHost)
 
         # Register handlers
-        self.btnUpload.clicked.connect(self.btnUploadClicked)
+        self.btnUpload.clicked.connect(self.btnImportClicked)
         self.cmbStudy.currentIndexChanged["QString"].connect(self.cmbStudyChanged)
         self.destroyed.connect(self.handleDestroyed)
 
@@ -108,14 +99,15 @@ class OcModule(QWidget, OcModuleUI):
         self.tvStudies.setModel(None)
         self.tvStudySubjects.setModel(None)
         self.tvStudyEvents.setModel(None)
-        self.tvDicomStudies.setModel(None)
+        self.tvCrfs.setModel(None)
+        self.tvItems.setModel(None)
         self.textBrowserProgress.clear()
 
         # Set selected study and reload sites
         self._selectedStudy = first.first(
-            study for study in self._studies if study.name().encode("utf-8") == text.toUtf8()
+            study for study in self._studies if study.name.encode("utf-8") == text.toUtf8()
         )
-        
+    
         # Reload study sites
         self.reloadStudySites()
 
@@ -128,7 +120,8 @@ class OcModule(QWidget, OcModuleUI):
         # Clean the model before loading the new one
         self.tvStudySubjects.setModel(None)
         self.tvStudyEvents.setModel(None)
-        self.tvDicomStudies.setModel(None)   
+        self.tvCrfs.setModel(None)
+        self.tvItems.setModel(None)  
         self.textBrowserProgress.clear()  
 
         # Take the first column of selected row from table view
@@ -147,28 +140,20 @@ class OcModule(QWidget, OcModuleUI):
         """Event handler which is triggered when selectedStudySubject change
         """
         self.tvStudyEvents.setModel(None)
-        self.tvDicomStudies.setModel(None)
+        self.tvCrfs.setModel(None)
+        self.tvItems.setModel(None)
         self.textBrowserProgress.clear()
 
-        # Take the first column of selected row from table view
-        index = self.studySubjectProxyModel.index(current.row(), 1);
+        # Take the second column (StudySubjectID) of selected row from table view
+        column = 1
+        index = self.studySubjectProxyModel.index(current.row(), column);
+        print index.data().toPyObject()
         if index.data().toPyObject(): 
             self._selectedStudySubject = (
                 first.first(
-                    subject for subject in self._studySubjects if subject.label().encode("utf-8") == index.data().toPyObject().toUtf8()
+                    subject for subject in self._studySubjects if subject.label.encode("utf-8") == index.data().toPyObject().toUtf8()
                     )
                 )
-
-            # TODO: enable this when you migrate to a new version of OC
-            # I need to load a SubjectKey
-            # ssREST = self.svcHttp.getStudyCasebookSubject(
-            #         ConfigDetails().ocHost, 
-            #         self.getStudyOid(), 
-            #         self._selectedStudySubject.label
-            #     )
-            # if ssREST != None:
-            #     self._selectedStudySubject.oid = ssREST.oid
-            #     self.logger.debug("Loaded subject key: " + self._selectedStudySubject.oid)
 
             # Load scheduled events for selected subject
             self.reloadEvents()
@@ -185,69 +170,62 @@ class OcModule(QWidget, OcModuleUI):
         #self._selectedStudyEvent = first.first(e for e in self._selectedStudySubject.events if e.name.encode("utf-8") == index.data().toPyObject().toUtf8())
 
         self._selectedStudyEvent = self._selectedStudySubject.events[current.row()]
-        self.reloadDicomFields()
 
-    def tblDicomStudiesItemChanged(self, current, previous):
-        """Event handler which is triggered whan Dicom Studies item change
+        self.reloadCrfs()
+
+    def tblEventCrfItemChanged(self, current, previous):
+        """
+        """
+        self.tvItems.setModel(None)
+        self.textBrowserProgress.clear()
+
+        # Take the second column (OID) of selected row from table view
+        column = 1
+        index = self.crfProxyModel.index(current.row(), column);
+
+        if index.data().toPyObject(): 
+            self._selectedCrf = (
+                first.first(
+                    crf for crf in self._selectedStudyEvent.forms if crf.oid.encode("utf-8") == index.data().toPyObject().toUtf8()
+                )
+            )
+
+        self.reloadItems()
+
+    def tblCrfFieldItemChanged(self, current, previous):
+        """
         """
         self.textBrowserProgress.clear()
 
-        # Take the fifth column (OID) of selected row from table view
-        index = self.dicomFieldsProxyModel.index(current.row(), 5);
-        if index.data().toPyObject():
-            self._selectedCrfDicomField = first.first(field for field in self._crfDicomFields if field.oid.encode("utf-8") == index.data().toPyObject().toUtf8())
+        # Take the second column (OID) of selected row from table view
+        column = 1
+        index = self.itemProxyModel.index(current.row(), column);
 
-            # Get the appropriate DICOM patient CRF field depending on selected study
-            for patientField in self._crfFieldsDicomPatientAnnotation:
-                if (patientField.eventdefinitionoid == self._selectedCrfDicomField.eventOid and\
-                    patientField.formoid == self._selectedCrfDicomField.formOid and\
-                    patientField.groupoid == self._selectedCrfDicomField.groupOid):
-                    self._selectedCrfDicomPatientField = patientField
-                    break
+        if index.data().toPyObject(): 
+            self._selectedItem = (
+                first.first(
+                    i for i in self._selectedCrf.items if i.oid.encode("utf-8") == index.data().toPyObject().toUtf8()
+                )
+            )
 
-            for reportField in self._crfFieldDicomReportAnnotation:
-                if (reportField.eventdefinitionoid == self._selectedCrfDicomField.eventOid and\
-                    reportField.formoid == self._selectedCrfDicomField.formOid and\
-                    reportField.groupoid == self._selectedCrfDicomField.groupOid and\
-                    reportField.crfitemoid.replace("SRTEXT","") in self._selectedCrfDicomField.oid):
-                    self._selectedCrfSRTextField = reportField
-                    break
-
-            reportText = ""
-
-            # Generate ODM XML for selection
-            odm = self.fileMetaDataService.generateOdmXmlForStudy(
-                        self.getStudyOid(),
-                        self._selectedStudySubject,
-                        self._selectedStudyEvent,
-                        reportText,
-                        self._selectedCrfDicomPatientField,
-                        self._selectedCrfDicomField,
-                        self._selectedCrfSRTextField
-                    )
-
-            self.logger.debug(odm)
-
-            # Show the preliminary XML (wihtout DICOM study UID - will be generated)
-            self.lblSummary.setText(odm)
-            self.lblSummary.setWordWrap(True)
-
-            # Show the selected upload target
-            msg = "Selected upload target: "
-            msg += self._selectedStudy.name() + "/"
+            # Show the selected import target
+            msg = "Selected import target: "
+            msg += self._selectedStudy.name + "/"
             if len(self._selectedStudy.sites) > 0:
                 msg += self._selectedStudySite.name + "/"
-            msg += self._selectedStudySubject.label + " ["
-            msg += self._selectedStudySubject.subject.uniqueIdentifier + "]" + "/"
+            msg += "StudySubjectID: " + self._selectedStudySubject.label + "/"
             if self._selectedStudyEvent.isRepeating:
                 msg += self._selectedStudyEvent.name + " [" + self._selectedStudyEvent.studyEventRepeatKey + "]/"
             else:
                 msg += self._selectedStudyEvent.name + "/"
-            msg += self._selectedCrfDicomField.label
+            msg += self._selectedCrf.name + "/"
+            msg += self._selectedItem.name 
+
+            self._logger.debug(msg)
 
             self.textBrowserProgress.append(msg)
 
-    def btnUploadClicked(self):
+    def btnImportClicked(self):
         """Upload button pressed (DICOM upload workflow started)
         """
         QtGui.qApp.processEvents(QtCore.QEventLoop.AllEvents, 1000)
@@ -255,19 +233,14 @@ class OcModule(QWidget, OcModuleUI):
         self.progressBar.setRange(0, 100)
         self.progressBar.setValue(0)
 
-        self.directory = self.selectFolderDialog()
-        
-        if self.directory is not None:
-            # Make textBrowser visible
-            self.textBrowserProgress.setVisible(True)
-            self.textBrowserProgress.append('Wait please:')
+        # Make textBrowser visible
+        self.textBrowserProgress.setVisible(True)
+        self.textBrowserProgress.append('Wait please:')
 
-            # Disable upload button for now but better is to desable whole UI
-            self.btnUpload.setEnabled(False)
+        # Disable upload button for now but better is to desable whole UI
+        self.btnUpload.setEnabled(False)
 
-            # Start the workflow: analyse the type of DICOM
-            #self.performDicomAnalysis()
-            self.performDicomDataPreparation()
+        self.performDataImport()
 
     def handleTaskUpdated(self, data):
         """Move progress bar precento by precento
@@ -285,11 +258,11 @@ class OcModule(QWidget, OcModuleUI):
     def handleDestroyed(self):
         """Kill runnign threads
         """
-        self.logger.debug("Destroying module")
+        self._logger.debug("Destroying module")
         for thread in self._threadPool:
             thread.terminate()
             thread.wait()
-            self.logger.debug("Thread killed.")
+            self._logger.debug("Thread killed.")
 
     def getStudyOid(self):
         """Return study or site OID depending on mono/multi centre configuration
@@ -299,7 +272,7 @@ class OcModule(QWidget, OcModuleUI):
             return self._selectedStudySite.oid
         # Monocentre
         else:
-            return self._selectedStudy.oid()
+            return self._selectedStudy.oid
 
  ######   #######  ##     ## ##     ##    ###    ##    ## ########   ######
 ##    ## ##     ## ###   ### ###   ###   ## ##   ###   ## ##     ## ##    ##
@@ -330,7 +303,7 @@ class OcModule(QWidget, OcModuleUI):
             self.ocWebServices = OCWebServices(self.ocConnectInfo)
 
         # ODM XML metadata processing
-        self.fileMetaDataService = OdmFileDataService()
+        self.svcOdm = OdmFileDataService()
 
     def reloadData(self):
         """Initialization of data for UI
@@ -349,8 +322,14 @@ class OcModule(QWidget, OcModuleUI):
         self._studySubjects = []
         self._selectedStudySubject = None
 
-        # Selected sheduled studye event for subject
+        # Selected sheduled study event for subject
         self._selectedStudyEvent = None
+
+        # Selected event CRF
+        self._selectedCrf = None
+
+        # Selected item
+        self._selectedItem = None
 
         # Load studies
         self.reloadStudies()
@@ -364,7 +343,9 @@ class OcModule(QWidget, OcModuleUI):
         self.tabWidget.setEnabled(False)
 
         # Create data loading thread
-        self._threadPool.append(WorkerThread(self.ocWebServices.listAllStudies))
+        self._threadPool.append(
+            WorkerThread(self.ocWebServices.listAllStudies)
+        )
 
         # Connect slots
         self.connect(
@@ -385,7 +366,11 @@ class OcModule(QWidget, OcModuleUI):
         self.tabWidget.setEnabled(False)
 
         # Create data loading thread
-        self._threadPool.append(WorkerThread(self.ocWebServices.getStudyMetadata, self._selectedStudy))
+        self._threadPool.append(
+            WorkerThread(
+                self.ocWebServices.getStudyMetadata, self._selectedStudy
+            )
+        )
 
         # Connect slots
         self.connect(
@@ -410,7 +395,7 @@ class OcModule(QWidget, OcModuleUI):
             for site in self._selectedStudy.sites:
                 siteIdentifierValue = QtGui.QStandardItem(site.identifier)
                 siteNameValue = QtGui.QStandardItem(site.name)
-                studyNameValue = QtGui.QStandardItem(self._selectedStudy.name())
+                studyNameValue = QtGui.QStandardItem(self._selectedStudy.name)
 
                 self.studySitesModel.setItem(row, 0, siteIdentifierValue)
                 self.studySitesModel.setItem(row, 1, siteNameValue)
@@ -418,8 +403,8 @@ class OcModule(QWidget, OcModuleUI):
 
                 row = row + 1
         else:
-            studyIdentifierValue = QtGui.QStandardItem(self._selectedStudy.identifier())
-            studyNameValue = QtGui.QStandardItem(self._selectedStudy.name())
+            studyIdentifierValue = QtGui.QStandardItem(self._selectedStudy.identifier)
+            studyNameValue = QtGui.QStandardItem(self._selectedStudy.name)
 
             self.studySitesModel.setItem(row, 0, studyIdentifierValue)
             self.studySitesModel.setItem(row, 2, studyNameValue)
@@ -458,9 +443,19 @@ class OcModule(QWidget, OcModuleUI):
 
         # Load subject for whole study or only site if it is multicentre study
         if self._selectedStudy and self._selectedStudy.isMulticentre:
-            self._threadPool.append(WorkerThread(self.ocWebServices.listAllStudySubjectsByStudySite, [self._selectedStudy, self._selectedStudySite, self._studyMetadata]))
+            self._threadPool.append(
+                WorkerThread(
+                    self.ocWebServices.listAllStudySubjectsByStudySite, 
+                    [self._selectedStudy, self._selectedStudySite, self._studyMetadata]
+                )
+            )
         else:
-            self._threadPool.append(WorkerThread(self.ocWebServices.listAllStudySubjectsByStudy, [self._selectedStudy, self._studyMetadata]))
+            self._threadPool.append(
+                WorkerThread(
+                    self.ocWebServices.listAllStudySubjectsByStudy,
+                    [self._selectedStudy, self._studyMetadata]
+                )
+            )
 
         # Connect slots
         self.connect(
@@ -503,7 +498,8 @@ class OcModule(QWidget, OcModuleUI):
         # Need to get EventRepeatKeys
         self._threadPool.append(
                 WorkerThread(
-                        self.svcHttp.getStudyCasebookEvents, [ConfigDetails().ocHost, self.getStudyOid(), self._selectedStudySubject.oid]
+                        self.svcHttp.getStudyCasebookEvents, 
+                        [ConfigDetails().ocHost, self.getStudyOid(), self._selectedStudySubject.oid]
                     )
             )
 
@@ -516,117 +512,133 @@ class OcModule(QWidget, OcModuleUI):
 
         # Start thread
         self._threadPool[len(self._threadPool) - 1].start()
-        
-    def reloadDicomFields(self):
-        """Reload annotations for OpenClinica eCRF fields
+
+    def reloadCrfs(self):
         """
+        """
+        self._selectedCrf = None
+
         # Setup loading UI
-        self.window().statusBar.showMessage("Loading list of DICOM field values...")
+        self.window().statusBar.showMessage("Loading list of eCRFs...")
         self.window().enableIndefiniteProgess()
         self.tabWidget.setEnabled(False)
 
-        studyoid = self.getStudyOid()
-        sspid = self._selectedStudySubject.subject.uniqueIdentifier
-        eventDefOid = self._selectedStudyEvent.eventDefinitionOID
-        studyEventRepeatKey = self._selectedStudyEvent.studyEventRepeatKey
+        # Quick way of crating simple viewModel
+        self.crfsModel = QtGui.QStandardItemModel()
+        self.crfsModel.setHorizontalHeaderLabels(["Name", "OID"])
 
-        # Get annotation for selected event, which you want to retrieve values for
-        annotations = []
-        for crfAnnotation in self._crfFieldsAnnotation:
-            if crfAnnotation.eventdefinitionoid == self._selectedStudyEvent.eventDefinitionOID:
-                annotations.append(crfAnnotation)
+        row = 0
+        for crf in self._selectedStudyEvent.forms:
+            nameItem = QtGui.QStandardItem(crf.name)
+            oidItem = QtGui.QStandardItem(crf.oid)
+           
+            self.crfsModel.setItem(row, 0, nameItem)
+            self.crfsModel.setItem(row, 1, oidItem)
 
-        # Create data loading thread
-        self._threadPool.append(WorkerThread(self.svcHttp.getCrfItemsValues, [studyoid, sspid, eventDefOid, studyEventRepeatKey, annotations]))
+            row = row + 1
 
-        # Connect slots
-        self.connect(
-            self._threadPool[len(self._threadPool) - 1],
-            QtCore.SIGNAL("finished(QVariant)"),
-            self.loadDicomFieldsFinished
+        self.crfProxyModel = QtGui.QSortFilterProxyModel()
+        self.crfProxyModel.setSourceModel(self.crfsModel)
+        self.crfProxyModel.setDynamicSortFilter(True)
+        self.crfProxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+
+        QtCore.QObject.connect(
+            self.txtCrfsFilter, 
+            QtCore.SIGNAL("textChanged(QString)"), 
+            self.crfProxyModel.setFilterRegExp
         )
 
-        # Start thread
-        self._threadPool[len(self._threadPool) - 1].start()
+        self.tvCrfs.setModel(self.crfProxyModel)
 
-    def selectFolderDialog(self):
-        """User selects a directory with the DICOM study files
+        self.tvCrfs.resizeColumnsToContents()
+        self.tvCrfs.selectionModel().currentChanged.connect(
+            self.tblEventCrfItemChanged
+        )
+
+        # Update status bar
+        self.tabWidget.setEnabled(True)
+        self.window().statusBar.showMessage("Ready")
+        self.window().disableIndefiniteProgess()
+
+    def reloadItems(self):
         """
-        try:
-            dirPath = QtGui.QFileDialog.getExistingDirectory(None, "Please select the folder with patient DICOM study files")
-            if dirPath == "":
-                return None
+        """
+        self._selectedItem = None
 
-            isReadable = os.access(str(dirPath),  os.R_OK)
-            QtGui.qApp.processEvents(QtCore.QEventLoop.AllEvents, 1000)
-            
-            if isReadable == False:
-                self.Error("The client is not allowed to read data from the selected folder!")
-                self.logger.error("No read access to selected folder.")
-                return None
-        except UnicodeEncodeError:
-            self.Error("The path to the selected folder contains unsupported characters (unicode), please use only ascii characters in names of folders!")
-            self.logger.error("Unsupported unicode folder path selected.")
-            return None    
+        # Setup loading UI
+        self.window().statusBar.showMessage("Loading list of CRF items...")
+        self.window().enableIndefiniteProgess()
+        self.tabWidget.setEnabled(False)
 
-        return str(dirPath)
+        # Quick way of crating simple viewModel
+        self.itemModel = QtGui.QStandardItemModel()
+        self.itemModel.setHorizontalHeaderLabels(["Name", "OID", "DataType", "Description"])
 
-    def performDicomUpload(self):
+        row = 0
+        for item in self._selectedCrf.items:
+            nameItem = QtGui.QStandardItem(item.name)
+            oidItem = QtGui.QStandardItem(item.oid)
+            dataTypeItem = QtGui.QStandardItem(item.dataType)
+            descriptionItem = QtGui.QStandardItem(item.description)
+           
+            self.itemModel.setItem(row, 0, nameItem)
+            self.itemModel.setItem(row, 1, oidItem)
+            self.itemModel.setItem(row, 2, dataTypeItem)
+            self.itemModel.setItem(row, 3, descriptionItem)
+
+            row = row + 1
+
+        self.itemProxyModel = QtGui.QSortFilterProxyModel()
+        self.itemProxyModel.setSourceModel(self.itemModel)
+        self.itemProxyModel.setDynamicSortFilter(True)
+        self.itemProxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+
+        QtCore.QObject.connect(
+            self.txtItemsFilter, 
+            QtCore.SIGNAL("textChanged(QString)"), 
+            self.itemProxyModel.setFilterRegExp
+        )
+
+        self.tvItems.setModel(self.itemProxyModel)
+
+        self.tvItems.resizeColumnsToContents()
+        self.tvItems.selectionModel().currentChanged.connect(
+            self.tblCrfFieldItemChanged
+        )
+
+        # Update status bar
+        self.tabWidget.setEnabled(True)
+        self.window().statusBar.showMessage("Ready")
+        self.window().disableIndefiniteProgess()
+
+    def performDataImport(self):
         """Perform upload of anonymised DICOM data and import of DICOM Patient ID, and Study Intance UID into OpenClinica
         Called after agter annonymise is finished
         """
-        self.textBrowserProgress.append("Importing anonymised information into eCRF...")
+        self.textBrowserProgress.append("Importing data into eCRF...")
 
-        self._selectedCrfDicomField.value = self.svcDicom.StudyUID
-        reportText = self.svcDicom.getReportSerieText()
+        # Dialog asking for value (depending on data type)
 
         # Generate ODM XML for selection
-        odm = self.fileMetaDataService.\
-            generateOdmXmlForStudy(\
-                self.getStudyOid(),\
-                self._selectedStudySubject,\
-                self._selectedStudyEvent,\
-                reportText,\
-                self._selectedCrfDicomPatientField,\
-                self._selectedCrfDicomField,\
-                self._selectedCrfSRTextField)
+        odm = self.svcOdm.generateOdmXmlForStudy(
+                self.getStudyOid(),
+                self._selectedStudySubject,
+                self._selectedStudyEvent,
+                reportText,
+                self._selectedCrfDicomPatientField,
+                self._selectedCrfDicomField,
+                self._selectedCrfSRTextField
+            )
 
-        self.logger.debug(odm)
-
-        # Show the preliminary XML (wihtout DICOM study UID - will be generated)
-        self.lblSummary.setText(odm)
-        self.lblSummary.setWordWrap(True)
+        self._logger.debug(odm)
 
         importSucessfull = self.ocWebServices.importODM(odm)
         if importSucessfull:
             self.textBrowserProgress.append("Import to OpenClinica sucessfull...")
-
-            # Start uploading DICOM data
-            # Create thread
-            self._threadPool.append(WorkerThread(self.svcDicom.uploadDicomData, self.svcHttp))
-            # Connect finish event
-            self._threadPool[len(self._threadPool) - 1].finished.connect(self.DicomUploadFinishedMessage)
-            # Connect message eventscd
-            self.connect(
-                self._threadPool[len(self._threadPool) - 1],
-                QtCore.SIGNAL("message(QString)"),
-                self.Message
-            )
-            self.connect(
-                self._threadPool[len(self._threadPool) - 1],
-                QtCore.SIGNAL("log(QString)"),
-                self.LogMessage
-            )
-            # Progress
-            self.connect(
-                    self._threadPool[len(self._threadPool) - 1],
-                    QtCore.SIGNAL("taskUpdated"),
-                    self.handleTaskUpdated
-            )
-            # Start thread
-            self._threadPool[len(self._threadPool) - 1].start()
+            self.ImportFinishedMessage()
         else:
             self.textBrowserProgress.append("Import Error. Cannot continue.")
+            self.ImportFinishedMessage()
             return
 
         return
@@ -640,7 +652,7 @@ class OcModule(QWidget, OcModuleUI):
         # And prepare ViewModel for the GUI
         studiesModel = QtGui.QStandardItemModel()
         for study in self._studies:
-           text = QtGui.QStandardItem(study.name())
+           text = QtGui.QStandardItem(study.name)
            studiesModel.appendRow([text])
         self.cmbStudy.setModel(studiesModel)
 
@@ -695,8 +707,8 @@ class OcModule(QWidget, OcModuleUI):
 
                 # Optional
                 secondaryLabelItem = QtGui.QStandardItem("")
-                if studySubject.secondaryLabel() != None:
-                    secondaryLabelItem = QtGui.QStandardItem(studySubject.secondaryLabel())
+                if studySubject.secondaryLabel != None:
+                    secondaryLabelItem = QtGui.QStandardItem(studySubject.secondaryLabel)
 
                 # Not everything has to be collected (depend on study setup)
                 pidItem = QtGui.QStandardItem("")
@@ -762,7 +774,7 @@ class OcModule(QWidget, OcModuleUI):
             isRepeatingItem = QtGui.QStandardItem(str(event.isRepeating))
             startDateItem = QtGui.QStandardItem("{:%d-%m-%Y}".format(event.startDate))
 
-            # Enhacne with information from REST
+            # Enhance with information from REST
             statusItem = QtGui.QStandardItem()
             for e in eventsREST:
                 if e.eventDefinitionOID == event.eventDefinitionOID and e.startDate.isoformat() == event.startDate.isoformat():
@@ -771,7 +783,7 @@ class OcModule(QWidget, OcModuleUI):
                     if event.isRepeating:
                         nameItem = QtGui.QStandardItem(event.name + " [" + event.studyEventRepeatKey + "]")
                     statusItem = QtGui.QStandardItem(event.status)
-                    event.setForms(e.forms)
+                    event.forms = e.forms
             
             self.eventsModel.setItem(row, 0, nameItem)
             self.eventsModel.setItem(row, 1, descriptionItem)
@@ -794,76 +806,6 @@ class OcModule(QWidget, OcModuleUI):
 
         self.tvStudyEvents.resizeColumnsToContents()
         self.tvStudyEvents.selectionModel().currentChanged.connect(self.tblStudyEventItemChanged)
-
-        # Update status bar
-        self.tabWidget.setEnabled(True)
-        self.window().statusBar.showMessage("Ready")
-        self.window().disableIndefiniteProgess()
-
-    def loadDicomFieldsFinished(self, crfFieldValues):
-        """Finished loading DICOM field CRFs values from server
-        """
-        retrievedValue = crfFieldValues.toPyObject()
-
-        # Get annotation for selected event
-        row = 0
-        dicomFieldsModel = QtGui.QStandardItemModel()
-        dicomFieldsModel.setHorizontalHeaderLabels(["Label", "Description", "Data type", "Field value", "Annotation", "OID"])
-        self._crfDicomFields = []
-
-        for crfAnnotation in self._crfFieldsAnnotation:
-            # Only annotation in event
-            if crfAnnotation.eventdefinitionoid == self._selectedStudyEvent.eventDefinitionOID:
-                # Only form (versions) which are scheduled (default versions are scheduled authomatically)
-                if self._selectedStudyEvent.hasScheduledCrf(crfAnnotation.formoid):
-
-                    value = str(retrievedValue[row])
-
-                    field = CrfDicomField(crfAnnotation.crfitemoid, \
-                        value,\
-                        crfAnnotation.annotationtype.name,\
-                        crfAnnotation.eventdefinitionoid,\
-                        crfAnnotation.formoid,\
-                        crfAnnotation.groupoid)
-
-                    self._crfDicomFields.append(field)
-
-                    i = self.fileMetaDataService.loadCrfItem(crfAnnotation.formoid, crfAnnotation.crfitemoid, self._studyMetadata)
-                    if i is not None:
-                        field.label = i.label
-                        itemLabelValue = QtGui.QStandardItem(i.label)
-                        itemDescriptionValue = QtGui.QStandardItem(i.description)
-                        itemDataTypeValue = QtGui.QStandardItem(i.dataType)
-                        itemValueValue = QtGui.QStandardItem(value)
-                        itemAnnotationType = QtGui.QStandardItem(crfAnnotation.annotationtype.name)
-                        itemCrfFieldOid = QtGui.QStandardItem(field.oid)
-
-                        dicomFieldsModel.setItem(row, 0, itemLabelValue)
-                        dicomFieldsModel.setItem(row, 1, itemDescriptionValue)
-                        dicomFieldsModel.setItem(row, 2, itemDataTypeValue)
-                        dicomFieldsModel.setItem(row, 3, itemValueValue)
-                        dicomFieldsModel.setItem(row, 4, itemAnnotationType)
-                        dicomFieldsModel.setItem(row, 5, itemCrfFieldOid)
-
-                        row = row + 1
-
-        # Create a proxy model to enable Sorting and filtering
-        self.dicomFieldsProxyModel = QtGui.QSortFilterProxyModel()
-        self.dicomFieldsProxyModel.setSourceModel(dicomFieldsModel)
-        self.dicomFieldsProxyModel.setDynamicSortFilter(True)
-        self.dicomFieldsProxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-
-        # Connect to filtering UI element
-        QtCore.QObject.connect(self.txtDicomStudiesFilter, QtCore.SIGNAL("textChanged(QString)"), self.dicomFieldsProxyModel.setFilterRegExp)
-
-        # Set model to View
-        self.tvDicomStudies.setModel(self.dicomFieldsProxyModel)
-
-        # Resize the width of columns to fit the content
-        self.tvDicomStudies.resizeColumnsToContents()
-
-        # After the view has model, set currentChanged behaviour
-        self.tvDicomStudies.selectionModel().currentChanged.connect(self.tblDicomStudiesItemChanged)
 
         # Update status bar
         self.tabWidget.setEnabled(True)
@@ -911,7 +853,7 @@ class OcModule(QWidget, OcModuleUI):
         """
         self.textBrowserProgress.append(string)
 
-    def DicomUploadFinishedMessage(self):
+    def ImportFinishedMessage(self):
         """ Called after uploadDataThread finished, after the data were uploaded to
         the RadPlanBio server
         """

@@ -101,7 +101,7 @@ class OCStudyEventDefinitionWsService():
             <listAllRequest>
             <v1:studyEventDefinitionListAll xmlns:v1="http://openclinica.org/ws/studyEventDefinition/v1">
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:identifier>""" + study.identifier() + """</bean:identifier>
+            <bean:identifier>""" + study.identifier + """</bean:identifier>
             </bean:studyRef>
             </v1:studyEventDefinitionListAll>
             </listAllRequest>""")
@@ -139,13 +139,15 @@ class OCStudyEventDefinitionWsService():
                             obtainedDefaultCrfVersion = CrfVersion(defaultCrfVersionOid, defaultCrfVersionName)
                         index = index + 1
 
-                obtainedEventDefinitionCrf = EventDefinitionCrf(required,
+                obtainedEventDefinitionCrf = EventDefinitionCrf(
+                    required,
                     doubleDataEntry,
                     passwordRequired,
                     hideCrf,
                     sourceDataVerificaiton,
                     obtainedCrf,
-                    obtainedDefaultCrfVersion)
+                    obtainedDefaultCrfVersion
+                )
 
                 eventDefinitionCrfs.append(obtainedEventDefinitionCrf)
 

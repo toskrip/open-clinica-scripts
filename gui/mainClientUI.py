@@ -121,7 +121,6 @@ class MainWindowUI(object):
         modulesMenu = self.menuBar.addMenu("&Modules")
         modulesMenu.addAction(ocAction)
         
-        #-----------
         aboutAction = QtGui.QAction(QtGui.QIcon(), "&About", self)
         aboutAction.setShortcut("F1")
         aboutAction.setStatusTip("About application")
@@ -129,7 +128,7 @@ class MainWindowUI(object):
 
         helpMenu = self.menuBar.addMenu("&Help")
         helpMenu.addAction(aboutAction)
-        #-----------
+        
         MainWindow.setMenuBar(self.menuBar)
 
 ########  #######   #######  ##       ########     ###    ########  

@@ -43,3 +43,4 @@ for ed in eventDefinitions:
     print ed
     for edCrf in ed.eventDefinitionCrfs():
         print edCrf.crf()
+        

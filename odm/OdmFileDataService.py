@@ -13,7 +13,6 @@ import logging.config
 from domain.CodeList import CodeList
 from domain.CodeListItem import CodeListItem
 from domain.EventDefinitionCrf import EventDefinitionCrf
-from domain.ExportMapping import ExportMapping
 from domain.Item import Item
 from domain.Study import Study
 from domain.StudyEventDefinition import StudyEventDefinition
@@ -223,83 +222,6 @@ class OdmFileDataService():
         # Return resulting CRT item
         return item
 
-    def loadExportMapping(self, eventCrf):
-        """
-        """
-        exportMapping = []
-
-        if (self.isFileLoaded) :
-            documentTree = ET.ElementTree(file=self.filename)
-
-            # First obtain item group refs for provided crf
-            itemGroupRefs = []
-
-            for groupRef in  documentTree.iterfind('.//odm:FormDef[@OID="' + eventCrf.oid() + '"]/odm:ItemGroupRef', namespaces=nsmaps):
-                itemGroupRefs.append(groupRef.attrib['ItemGroupOID'])
-
-            # Now accumulate Item Refs for all groups
-            itemRefs = []
-
-            for groupRef in itemGroupRefs:
-                for itemRef in documentTree.iterfind('.//odm:ItemGroupDef[@OID="' + groupRef + '"]/odm:ItemRef', namespaces=nsmaps):
-                    itemRefs.append(itemRef.attrib['ItemOID'])
-
-            # Finally find all ItemDefs according to ItemRef
-            for itemRef in itemRefs:
-                for element in documentTree.iterfind('.//odm:ItemDef[@OID="' + itemRef + '"]', namespaces=nsmaps):
-                    exportMap = ExportMapping(element.attrib['Comment'])
-                    exportMap.name = element.attrib['Name']
-                    exportMap.metadataOid = element.attrib['OID']
-                    exportMap.dataType = element.attrib['DataType']
-
-                    # for text, integer and float get also length
-                    if exportMap.dataType == "text" or exportMap.dataType == "integer" or exportMap.dataType == "float":
-                        exportMap.length = int(element.attrib['Length'])
-
-                    # Determine if the Item values are encoded via codeList
-                    codeListRef = documentTree.find('.//odm:ItemDef[@OID="' + exportMap.metadataOid + '"]/cdisc:CodeListRef', namespaces=nsmaps)
-
-                    if codeListRef is not None:
-                        # Get the CodeListOID for identification of CodeList
-                        clr = codeListRef.attrib['CodeListOID']
-                        codeListElement = documentTree.find('.//cdisc:CodeList[@OID="' + clr + '"]', namespaces=nsmaps)
-
-                        # Create CodeList
-                        oid = codeListElement.attrib['OID']
-                        name = codeListElement.attrib['Name']
-                        dataType = codeListElement.attrib['DataType']
-                        codeList = CodeList(oid, name, dataType)
-
-                        # Looking for code list items
-                        if codeListElement is not None:
-                            codeListItems = []
-                            for codeListItemElement in documentTree.iterfind('.//cdisc:CodeList[@OID="' + clr + '"]/cdisc:CodeListItem', namespaces=nsmaps):
-                                codedValue = codeListItemElement.attrib['CodedValue']
-                                decodedValue = ""
-                                codeListItem = CodeListItem(codedValue, decodedValue)
-                                codeListItems.append(codeListItem)
-
-                            i = 0;
-                            for textElement in documentTree.iterfind('.//cdisc:CodeList[@OID="' + clr + '"]/cdisc:CodeListItem/cdisc:Decode/cdisc:TranslatedText', namespaces=nsmaps):
-                                decodedValue = textElement.text
-                                codeListItems[i].decodedValue = decodedValue
-                                i = i + 1
-
-                            codeList.listItems = codeListItems
-                            exportMap.codeList = codeList
-
-                    exportMapping.append(exportMap)
-
-            # Extend them about infromation from ItemRef elements (mandatory fields)
-            for exportMapElement in exportMapping:
-                for element in documentTree.iterfind('.//cdisc:ItemRef[@ItemOID="' + exportMapElement.metadataOid + '"]', namespaces=nsmaps):
-                    if element.attrib['Mandatory'] == "Yes":
-                        exportMapElement.mandatory = True
-                    elif element.attrib['Mandatory'] == "No":
-                        exportMapElement.mandatory = False
-
-        return exportMapping
-
     def printData(self):
         """Print the content of file to the console
         """
@@ -460,6 +382,3 @@ class OdmFileDataService():
             return itemGroupOids[0]
         else:
             return None
-
-    def getRadPlanBioDicomItemNamesFromMetadata():
-        pass

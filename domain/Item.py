@@ -15,12 +15,13 @@ class Item():
     def __init__(self):
         """Default Constructor
         """
-        self.__oid = ""
-        self.__name = ""
-        self.__description = ""
-        self.__dataType = ""
-        self.__label = ""
-        self.__value = ""
+        self._oid = ""
+        self._name = ""
+        self._description = ""
+        self._dataType = ""
+        self._label = ""
+        self._value = ""
+        self._itemGroupOid = ""
 
 ########  ########   #######  ########  ######## ########  ######## #### ########  ######  
 ##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##    ## 
@@ -34,70 +35,84 @@ class Item():
     def oid(self):
         """ItemDef OID Getter
         """
-        return self.__oid
+        return self._oid
 
     @oid.setter
     def oid(self, value):
         """ItemDef OID Setter
         """
-        self.__oid = value
+        self._oid = value
 
     @property
     def name(self):
         """
         """
-        return self.__name
+        return self._name
 
     @name.setter
     def name(self, value):
         """
         """
-        self.__name = value
+        self._name = value
 
     @property
     def description(self):
         """
         """
-        return self.__description
+        return self._description
 
     @description.setter
     def description(self, value):
         """
         """
-        self.__description = value
+        self._description = value
 
     @property
     def label(self):
         """
         """
-        return self.__label
+        return self._label
 
     @label.setter
     def label(self, value):
         """
         """
-        self.__label = value
+        self._label = value
 
     @property
     def dataType(self):
         """
         """
-        return self.__dataType
+        return self._dataType
 
     @dataType.setter
     def dataType(self, value):
         """
         """
-        self.__dataType = value
+        self._dataType = value
 
     @property
     def value(self):
         """ItemDef OID Getter
         """
-        return self.__value
+        return self._value
 
     @value.setter
     def value(self, itemValue):
         """ItemDef OID Setter
         """
-        self.__value = itemValue
+        self._value = itemValue
+
+##     ## ######## ######## ##     ##  #######  ########   ######  
+###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
+#### #### ##          ##    ##     ## ##     ## ##     ## ##       
+## ### ## ######      ##    ######### ##     ## ##     ##  ######  
+##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
+##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
+##     ## ########    ##    ##     ##  #######  ########   ######  
+
+    def __repr__(self):
+        """Object representation
+        """
+        adr = hex(id(self)).upper()
+        return "<CRF item oid: %s, name: %s at %s>" % (self.oid, self.name, adr)

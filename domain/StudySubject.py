@@ -1,9 +1,14 @@
+#### ##     ## ########   #######  ########  ########  ######
+ ##  ###   ### ##     ## ##     ## ##     ##    ##    ##    ##
+ ##  #### #### ##     ## ##     ## ##     ##    ##    ##
+ ##  ## ### ## ########  ##     ## ########     ##     ######
+ ##  ##     ## ##        ##     ## ##   ##      ##          ##
+ ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
+#### ##     ## ##         #######  ##     ##    ##     ######
+
 class StudySubject():
     """Representation of a subject which is enrolled into a Study
     """
-
-    #-------------------------------------------------------------------
-    #-------------------- Constuctor -----------------------------------
 
     def __init__(self, label="", secondaryLabel="", enrollmentDate="", subject=None, events=[]):
         """Default Constructor
@@ -20,11 +25,19 @@ class StudySubject():
         # ISO date string of enrollment of subject to the study
         self._enrollmentDate = enrollmentDate
 
+        # Study agnostic entity subject (has person ID)
         self._subject = subject
+
+        # Scheduled events list
         self._events = events
 
-    #-------------------------------------------------------------------
-    #-------------------- Properties -----------------------------------
+########  ########   #######  ########  ######## ########  ######## #### ########  ######
+##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##    ##
+##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##
+########  ########  ##     ## ########  ######   ########     ##     ##  ######    ######
+##        ##   ##   ##     ## ##        ##       ##   ##      ##     ##  ##             ##
+##        ##    ##  ##     ## ##        ##       ##    ##     ##     ##  ##       ##    ##
+##        ##     ##  #######  ##        ######## ##     ##    ##    #### ########  ######
 
     @property
     def oid(self):
@@ -42,8 +55,13 @@ class StudySubject():
     def label(self, value):
         self._label = value
 
+    @property
     def secondaryLabel(self):
         return self._secondaryLabel
+
+    @secondaryLabel.setter
+    def secondaryLabel(self, value):
+        self._secondaryLabel = value
 
     @property
     def enrollmentDate(self):
@@ -83,11 +101,13 @@ class StudySubject():
         """
         self._events = eventList
 
-    #-------------------------------------------------------------------
-    #----------------------- Methods -----------------------------------
-
-    def atrSize(self):
-        return 3
+##     ## ######## ######## ##     ##  #######  ########   ######  
+###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
+#### #### ##          ##    ##     ## ##     ## ##     ## ##       
+## ### ## ######      ##    ######### ##     ## ##     ##  ######  
+##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
+##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
+##     ## ########    ##    ##     ##  #######  ########   ######  
 
     def __repr__(self):
         """Object representation

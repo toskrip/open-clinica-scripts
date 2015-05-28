@@ -53,7 +53,9 @@ svcHttp = HttpConnectionService(
 )
 
 # From rest output we can reade SubjectKey (OID) which is not accessible via SOAP
-restSubjects = svcHttp.getStudyCasebookSubjects([ConfigDetails().ocHost, selectedStudy.oid()])
+restSubjects = svcHttp.getStudyCasebookSubjects(
+        [ConfigDetails().ocHost, selectedStudy.oid]
+    )
 
 for restSubject in restSubjects:
 	print restSubject

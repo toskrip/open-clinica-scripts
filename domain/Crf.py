@@ -21,6 +21,7 @@ class Crf():
         self._isDefaultVersion = False
 
         self._itemGroups = []
+        self._items = []
 
 ########  ########   #######  ########  ######## ########  ######## #### ########  ######  
 ##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##    ## 
@@ -101,6 +102,12 @@ class Crf():
         """Item groups Setter
         """
         self._itemGroups = value
+
+    @property
+    def items(self):
+        """
+        """
+        return self._items
         
 ##     ## ######## ######## ##     ##  #######  ########   ######  
 ###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
@@ -109,11 +116,6 @@ class Crf():
 ##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
 ##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
 ##     ## ########    ##    ##     ##  #######  ########   ######  
-
-    def atrSize(self):
-        """Number of showable arguments
-        """
-        return 2
 
     def __repr__(self):
         """Object representation

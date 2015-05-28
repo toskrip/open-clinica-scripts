@@ -3,18 +3,15 @@ class CrfVersion():
     def __init__(self, oid, name):
 
         # Init members
-        self.__oid = oid
-        self.__name = name
+        self._oid = oid
+        self._name = name
 
 
+    @property
     def oid(self):
-        return self.__oid
+        return self._oid
 
-
+    @property
     def name(self):
-        return self.__name
-
-
-    def atrSize(self):
-        return 2
+        return self._name
 

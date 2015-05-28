@@ -112,7 +112,7 @@ class OCStudySubjectWsService():
         params = SimpleXMLElement("""<?xml version="1.0" encoding="UTF-8"?>
             <listAllByStudyRequest>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:identifier>""" + study.identifier() + """</bean:identifier>
+            <bean:identifier>""" + study.identifier + """</bean:identifier>
             </bean:studyRef>
             </listAllByStudyRequest>""")
 
@@ -196,12 +196,14 @@ class OCStudySubjectWsService():
         for ss in studySubjects:
             for e in ss.events:
                 for me in metadataEvents:
-                    if e.eventDefinitionOID == me.oid():
-                        e.name = me.name()
+                    if e.eventDefinitionOID == me.oid:
+                        e.name = me.name
                         e.description = me.description
-                        e.isRepeating = me.repeating()
-                        e.eventType = me.type()
+                        e.isRepeating = me.repeating
+                        e.eventType = me.type
                         e.category = me.category
+                        e.mandatory = me.mandatory
+                        e.orderNumber = me.orderNumber
 
         result = str(response.result)
         return studySubjects
@@ -298,12 +300,14 @@ class OCStudySubjectWsService():
         for ss in studySubjects:
             for e in ss.events:
                 for me in metadataEvents:
-                    if e.eventDefinitionOID == me.oid():
-                        e.name = me.name()
+                    if e.eventDefinitionOID == me.oid:
+                        e.name = me.name
                         e.description = me.description
-                        e.isRepeating = me.repeating()
-                        e.eventType = me.type()
+                        e.isRepeating = me.repeating
+                        e.eventType = me.type
                         e.category = me.category
+                        e.mandatory = me.mandatory
+                        e.orderNumber = me.orderNumber
 
         result = str(response.result)
         return studySubjects
@@ -327,7 +331,7 @@ class OCStudySubjectWsService():
             <bean:gender>""" + studySubject.subject.gender + """</bean:gender>
             </bean:subject>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:identifier>""" + study.identifier() + """</bean:identifier>
+            <bean:identifier>""" + study.identifier + """</bean:identifier>
             </bean:studyRef>
             </v1:studySubject>
             </createRequest>""")
@@ -349,7 +353,7 @@ class OCStudySubjectWsService():
             """ + studySubject.label + """
             </bean:label>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:identifier>""" + study.identifier() + """</bean:identifier>
+            <bean:identifier>""" + study.identifier + """</bean:identifier>
             </bean:studyRef>
             </v1:studySubject>
             </isStudySubjectRequest>""")
@@ -374,19 +378,22 @@ class OCStudySubjectWsService():
 
             for studyEventRef in documentTree.iterfind('.//odm:StudyEventRef', namespaces=nsmaps):
                 studyEventRefs.append(studyEventRef.attrib['StudyEventOID'])
-                # # In case I need this information later
-                # print studyEventRef.attrib['Mandatory']
-                # print studyEventRef.attrib['OrderNumber']
+                
+                # In case I need this information later
+                eventIsMandatory =  studyEventRef.attrib['Mandatory'] == "Yes"
+                eventOrderInProtocol = int(studyEventRef.attrib['OrderNumber'])
 
             # Now for each study event reference find study event definition
             for eventRef in studyEventRefs:
                 for element in documentTree.iterfind('.//odm:StudyEventDef[@OID="' + eventRef + '"]', namespaces=nsmaps):
                     studyEvent = StudyEventDefinition()
 
-                    studyEvent.setOid(element.attrib['OID'])
-                    studyEvent.setName(element.attrib['Name'])
-                    studyEvent.setRepeating(element.attrib['Repeating'] == "Yes")
-                    studyEvent.setType(element.attrib['Type'])
+                    studyEvent.oid = element.attrib['OID']
+                    studyEvent.name = element.attrib['Name']
+                    studyEvent.repeating = element.attrib['Repeating'] == "Yes"
+                    studyEvent.type = element.attrib['Type']
+                    studyEvent.mandatory = eventIsMandatory
+                    studyEvent.orderNumber = eventOrderInProtocol
 
                     for eventElement in element:
                         if (str(eventElement.tag)).strip() == "{http://www.openclinica.org/ns/odm_ext_v130/v3.1}EventDefinitionDetails":

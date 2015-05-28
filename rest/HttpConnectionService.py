@@ -33,9 +33,7 @@ import json
 from domain.Subject import Subject
 from domain.Event import Event
 from domain.Crf import Crf
-
-# Utils
-from utils.JsonSerializer import JsonSerializer
+from domain.Item import Item
 
  ######  ######## ########  ##     ## ####  ######  ########
 ##    ## ##       ##     ## ##     ##  ##  ##    ## ##
@@ -56,9 +54,9 @@ class HttpConnectionService(object):
         logging.config.fileConfig("logging.ini", disable_existing_loggers=False)
 
         # Server IP and port as members
-        self.__ip = ip
-        self.__port = port
-        self.__userDetails = userDetails
+        self._ip = ip
+        self._port = port
+        self._userDetails = userDetails
 
         # Proxy settings
         self._proxyEnabled = False
@@ -83,27 +81,25 @@ class HttpConnectionService(object):
     def ip(self):
         """IP Getter
         """
-        return self.__ip
+        return self._ip
 
     @ip.setter
     def ip(self, value):
         """IP Setter
         """
-        if self.__ip != value:
-            self.__ip = value
+        self._ip = value
 
     @property
     def port(self):
         """Port Getter
         """
-        return self.__port
+        return self._port
 
     @port.setter
     def port(self, value):
         """Port Setter
         """
-        if self.__port != value:
-            self.__port = value
+        self._port = value
 
 ##     ## ######## ######## ##     ##  #######  ########   ######  
 ###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
@@ -301,17 +297,92 @@ class HttpConnectionService(object):
                                         if fd["@OID"] in eventFormOids:
                                             if not event.hasScheduledCrf(fd["@OID"]):
                                                 if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
-                                                    crf = Crf()
-                                                    crf.oid = fd["@OID"]
-                                                    event.addCrf(crf)
+                                                    event.addCrf(
+                                                        Crf(fd["@OID"], fd["@Name"])
+                                                    )
+
+                                                    # Collect references to ItemGroups
+                                                    igRef = fd["ItemGroupRef"]
+                                                    if type(igRef) is list:
+                                                        for igr in igRef:
+                                                            itemGroupOids.append(igr["@ItemGroupOID"])
+                                                    elif type (igRef) is dict:
+                                                        igr = igRef
+                                                        itemGroupOids.append(igr["@ItemGroupOID"])
+
                                 elif type(formDefinition) is dict:
                                     fd = formDefinition
                                     if fd["@OID"] in eventFormOids:
                                         if not event.hasScheduledCrf(fd["@OID"]):
                                             if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
-                                                crf = Crf()
-                                                crf.oid = fd["@OID"]
-                                                event.addCrf(crf)
+                                                event.addCrf(
+                                                    Crf(fd["@OID"], fd["@Name"])
+                                                )
+
+                                                # Collect references to ItemGroups
+                                                igRef = fd["ItemGroupRef"]
+                                                if type(igRef) is list:
+                                                    for igr in igRef:
+                                                        itemGroupOids.append(igr["@ItemGroupOID"])
+                                                elif type (igRef) is dict:
+                                                    igr = igRef
+                                                    itemGroupOids.append(igr["@ItemGroupOID"])
+
+                                # Discover items base on theri refOIDs
+                                itemOids = []
+                                itemGroupDefinition = r.json()["Study"]["MetaDataVersion"]["ItemGroupDef"]
+                                if type(itemGroupDefinition) is list:
+                                    for igd in itemGroupDefinition:
+                                        if igd["@OID"] in itemGroupOids:
+                                            
+                                            iRef = igd["ItemRef"]
+                                            if type(iRef) is list:
+                                                for ir in iRef:
+                                                    itemOids.append(ir["@ItemOID"])
+                                            elif type(iRef) is dict:
+                                                ir = iRef
+                                                itemOids.append(ir["@ItemOID"])
+
+                                elif type(itemGroupDefinition) is dict:
+                                    igd = itemGroupDefinition
+                                    if igd["@OID"] in itemGroupOids:
+                                        
+                                        iRef = igd["ItemRef"]
+                                        if type(iRef) is list:
+                                            for ir in iRef:
+                                                itemOids.append(ir["@ItemOID"])
+                                        elif type(iRef) is dict:
+                                            ir = iRef
+                                            itemOids.append(ir["@ItemOID"])
+
+                                # Setup items for CRF in event
+                                itemDefinition = r.json()["Study"]["MetaDataVersion"]["ItemDef"]
+                                if type(itemDefinition) is list:
+                                    for itemDef in itemDefinition:
+                                        if itemDef["@OID"] in itemOids:
+                                            crf = event.getCrf(itemDef["@OpenClinica:FormOIDs"])
+
+                                            item = Item()
+                                            item.oid = itemDef["@OID"]
+                                            item.name = itemDef["@Name"]
+                                            item.dataType = itemDef["@DataType"]
+                                            item.description = itemDef["@Comment"]
+                                            
+                                            crf.items.append(item)
+
+                                elif type(itemDefinition) is dict:
+                                    itemDef = itemDefinition
+                                    if itemDef["@OID"] in itemOids:
+                                        crf = event.getCrf(itemDef["@OpenClinica:FormOIDs"])
+
+                                        item = Item()
+                                        item.oid = itemDef["@OID"]
+                                        item.name = itemDef["@Name"]
+                                        item.dataType = itemDef["@DataType"]
+                                        item.description = itemDef["@Comment"]
+                                        
+                                        crf.items.append(item)
+
 
                                 results.append(event)
                         # Only one event reported
@@ -357,9 +428,9 @@ class HttpConnectionService(object):
                                     crf.version = frm["@OpenClinica:Version"]
                                     crf.status = frm["@OpenClinica:Status"]
                                     event.addCrf(crf)
+
                             # + automatically schedule default version (if it is not)
                             eventFormOids = []
-
                             eventDefinition = r.json()["Study"]["MetaDataVersion"]["StudyEventDef"]
                             if type(eventDefinition) is list:
                                 for ed in eventDefinition:
@@ -378,26 +449,99 @@ class HttpConnectionService(object):
                                 elif type(formRef) is dict:
                                     eventFormOids.append(formRef["@FormOID"])
 
+                            itemGroupOids = []
                             formDefinition = r.json()["Study"]["MetaDataVersion"]["FormDef"]
                             if type(formDefinition) is list:
                                 for fd in formDefinition:
                                     if fd["@OID"] in eventFormOids:
                                         if not event.hasScheduledCrf(fd["@OID"]):
                                             if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
-                                                crf = Crf()
-                                                crf.oid = fd["@OID"]
-                                                event.addCrf(crf)
+                                                event.addCrf(
+                                                    Crf(fd["@OID"], fd["@Name"])
+                                                )
+
+                                                # Collect references to ItemGroups
+                                                igRef = fd["ItemGroupRef"]
+                                                if type(igRef) is list:
+                                                    for igr in igRef:
+                                                        itemGroupOids.append(igr["@ItemGroupOID"])
+                                                elif type (igRef) is dict:
+                                                    igr = igRef
+                                                    itemGroupOids.append(igr["@ItemGroupOID"])
                             elif type(formDefinition) is dict:
                                 fd = formDefinition
                                 if fd["@OID"] in eventFormOids:
                                     if not event.hasScheduledCrf(fd["@OID"]):
                                         if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
-                                            crf = Crf()
-                                            crf.oid = fd["@OID"]
-                                            event.addCrf(crf)
+                                            event.addCrf(
+                                                Crf(fd["@OID"], fd["@Name"])
+                                            )
+
+                                            # Collect references to ItemGroups
+                                            igRef = fd["ItemGroupRef"]
+                                            if type(igRef) is list:
+                                                for igr in igRef:
+                                                    itemGroupOids.append(igr["@ItemGroupOID"])
+                                            elif type (igRef) is dict:
+                                                igr = igRef
+                                                itemGroupOids.append(igr["@ItemGroupOID"])
+
+                            # Discover items base on theri refOIDs
+                            itemOids = []
+                            itemGroupDefinition = r.json()["Study"]["MetaDataVersion"]["ItemGroupDef"]
+                            if type(itemGroupDefinition) is list:
+                                for igd in itemGroupDefinition:
+                                    if igd["@OID"] in itemGroupOids:
+                                        
+                                        iRef = igd["ItemRef"]
+                                        if type(iRef) is list:
+                                            for ir in iRef:
+                                                itemOids.append(ir["@ItemOID"])
+                                        elif type(iRef) is dict:
+                                            ir = iRef
+                                            itemOids.append(ir["@ItemOID"])
+
+                            elif type(itemGroupDefinition) is dict:
+                                igd = itemGroupDefinition
+                                if igd["@OID"] in itemGroupOids:
+                                    
+                                    iRef = igd["ItemRef"]
+                                    if type(iRef) is list:
+                                        for ir in iRef:
+                                            itemOids.append(ir["@ItemOID"])
+                                    elif type(iRef) is dict:
+                                        ir = iRef
+                                        itemOids.append(ir["@ItemOID"])
+
+                            # Setup items for CRF in event
+                            itemDefinition = r.json()["Study"]["MetaDataVersion"]["ItemDef"]
+                            if type(itemDefinition) is list:
+                                for itemDef in itemDefinition:
+                                    if itemDef["@OID"] in itemOids:
+                                        crf = event.getCrf(itemDef["@OpenClinica:FormOIDs"])
+
+                                        item = Item()
+                                        item.oid = itemDef["@OID"]
+                                        item.name = itemDef["@Name"]
+                                        item.dataType = itemDef["@DataType"]
+                                        item.description = itemDef["@Comment"]
+                                        
+                                        crf.items.append(item)
+
+                            elif type(itemDefinition) is dict:
+                                itemDef = itemDefinition
+                                if itemDef["@OID"] in itemOids:
+                                    crf = event.getCrf(itemDef["@OpenClinica:FormOIDs"])
+
+                                    item = Item()
+                                    item.oid = itemDef["@OID"]
+                                    item.name = itemDef["@Name"]
+                                    item.dataType = itemDef["@DataType"]
+                                    item.description = itemDef["@Comment"]
+                                    
+                                    crf.items.append(item)
 
                             results.append(event)
-
         if thread:
             thread.emit(QtCore.SIGNAL("finished(QVariant)"), results)
             return None
@@ -422,7 +566,7 @@ class HttpConnectionService(object):
         format = "json"
 
         s = requests.Session()
-        loginCredentials = { "j_username": self.__userDetails.username, "j_password" : self.__userDetails.clearpass }
+        loginCredentials = { "j_username": self._userDetails.username, "j_password" : self._userDetails.clearpass }
 
         auth = None
         if self._proxyAuthEnabled:
@@ -435,7 +579,7 @@ class HttpConnectionService(object):
 
         # Application proxy enabled
         if self._proxyEnabled:
-            if self._noProxy != "" and self._noProxy is not whitespace and self._noProxy in "https://" + self.__ip:
+            if self._noProxy != "" and self._noProxy is not whitespace and self._noProxy in "https://" + self._ip:
                 self._logger.info("Connecting without proxy because of no proxy: " + self._noProxy)
                 r = s.post(ocBaseUrl + "j_spring_security_check", loginCredentials, auth=auth, verify=False, proxies={})
                 r = s.get(ocBaseUrl + "rest/clinicaldata/" + format + "/view/" + method, auth=auth, verify=False, proxies={})
@@ -446,7 +590,7 @@ class HttpConnectionService(object):
                 r = s.get(ocBaseUrl + "rest/clinicaldata/" + format + "/view/" + method, auth=auth, verify=False, proxies=proxies)
         # Use system proxy
         else:
-            proxies = requests.utils.get_environ_proxies("https://" + self.__ip)
+            proxies = requests.utils.get_environ_proxies("https://" + self._ip)
             self._logger.info("Using system proxy variables (no proxy applied): " + str(proxies))
             
             r = s.post(ocBaseUrl + "j_spring_security_check", loginCredentials, auth=auth, verify=False, proxies=proxies)

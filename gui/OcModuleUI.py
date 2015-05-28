@@ -33,17 +33,19 @@ class OcModuleUI(object):
         self.centralwidget = QtGui.QWidget(Module)
         self.centralwidget.setObjectName(_fromUtf8("ocModule"))
         self.rootLayout = QtGui.QVBoxLayout(self.parent)
+
         #----------------------------------------------------------------------
         #---------------------------- Icons -----------------------------------
-        newIconRes = ':/images/new.png'
-        reloadIconRes = ':/images/reload.png'
-        saveIconRes = ':/images/save.png'
-        detailsIconRes = ':/images/details.png'
-        deleteIconRes = ':/images/delete.png'
-        reloadIconRes = ':/images/reload.png'
+        newIconRes = ":/images/new.png"
+        reloadIconRes = ":/images/reload.png"
+        saveIconRes = ":/images/save.png"
+        detailsIconRes = ":/images/details.png"
+        deleteIconRes = ":/images/delete.png"
+        reloadIconRes = ":/images/reload.png"
+        uploadIconPath = ":/images/localDicomUpload.png"
 
         self.reloadIcon = QtGui.QIcon()
-        self.reloadIcon.addPixmap(QtGui.QPixmap(reloadIconRes));
+        self.reloadIcon.addPixmap(QtGui.QPixmap(reloadIconRes))
 
         self.newIcon = QtGui.QIcon()
         self.newIcon.addPixmap(QtGui.QPixmap(newIconRes))
@@ -56,6 +58,11 @@ class OcModuleUI(object):
 
         self.detailsIcon = QtGui.QIcon()
         self.detailsIcon.addPixmap(QtGui.QPixmap(detailsIconRes))
+
+        self.uploadIcon = QtGui.QIcon()
+        self.uploadIcon.addPixmap(QtGui.QPixmap(uploadIconPath))
+
+        self.toolBarButtonSize = 20
 
         #----------------------------------------------------------------------
         #--------------------- Setup UI----------------------------------------
@@ -70,55 +77,12 @@ class OcModuleUI(object):
         self.setupSites()
         self.setupSubjects()
         self.setupEvents()
-        self.setupDicomStudies()
-
-        tab4 = QtGui.QWidget()
-        tab5 = QtGui.QWidget()
-
-        # Add tabs to widget
-        #self.tabWidget.addTab(tab4, "Study event CRFs")
-        self.tabWidget.addTab(tab5, "Summary")
-
-        # Create table views
-        self.txtStudyEventCrfFilter = QtGui.QLineEdit()
-        self.tvStudyEventCrfs = QtGui.QTableView()
-
-        self.lblSummary = QtGui.QLabel("")
-        self.textBrowserProgress = QtGui.QTextBrowser()
-        self.textBrowserProgress.setObjectName(_fromUtf8("textBrowserProgress"))
-
-        toolBarButtonSize = 20
-        self.btnUpload = QtGui.QPushButton()
-        uploadIconPath = ":/images/localDicomUpload.png"
-        uploadIcon = QtGui.QIcon()
-        uploadIcon.addPixmap(QtGui.QPixmap(uploadIconPath));
-        self.btnUpload.setIcon(uploadIcon)
-        self.btnUpload.setIconSize(QtCore.QSize(toolBarButtonSize, toolBarButtonSize))
-
-        self.progressBar = QtGui.QProgressBar()
-
-        # Behaviour for the table views
-        self.tvStudyEventCrfs.setAlternatingRowColors(True)
-        self.tvStudyEventCrfs.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.tvStudyEventCrfs.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-
-        # Define layout for tab1 (as a child)
-
-        layoutTab4 = QtGui.QVBoxLayout(tab4)
-        layoutTab5 = QtGui.QVBoxLayout(tab5)
-
-        # Add table view into the layour of tab1
-        layoutTab4.addWidget(self.txtStudyEventCrfFilter)
-        layoutTab4.addWidget(self.tvStudyEventCrfs)
-
-        # Last step
-        layoutTab5.addWidget(self.lblSummary)
-        layoutTab5.addWidget(self.textBrowserProgress)
-        layoutTab5.addWidget(self.progressBar)
-        layoutTab5.addWidget(self.btnUpload)
+        self.setupCrfs()
+        self.setupItems()
+        self.setupSummary()
 
         self.rootLayout.addWidget(self.tabWidget)
-
+        
         #----------------------------------------------------------------------
         #---- Put defined central widget into ManWindow central widget --------
         self.retranslateUi(Module)
@@ -222,31 +186,84 @@ class OcModuleUI(object):
         layoutEvents.addLayout(layoutEventsToolbar)
         layoutEvents.addWidget(self.tvStudyEvents)
 
-    def setupDicomStudies(self):
+    def setupCrfs(self):
         """
         """
-        tabDicomStudies = QtGui.QWidget()
+        tabCrfs = QtGui.QWidget()
 
-        self.tabWidget.addTab(tabDicomStudies, "DICOM")
+        self.tabWidget.addTab(tabCrfs, "CRFs")
 
-        self.txtDicomStudiesFilter = QtGui.QLineEdit()
-        self.tvDicomStudies = QtGui.QTableView()
+        self.txtCrfsFilter = QtGui.QLineEdit()
+        self.tvCrfs = QtGui.QTableView()
 
-        self.tvDicomStudies.setAlternatingRowColors(True)
-        self.tvDicomStudies.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.tvDicomStudies.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
-        self.tvDicomStudies.setSortingEnabled(True);
+        self.tvCrfs.setAlternatingRowColors(True)
+        self.tvCrfs.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.tvCrfs.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.tvCrfs.setSortingEnabled(True);
 
-        layoutDicomStudies = QtGui.QVBoxLayout(tabDicomStudies)
-        layoutDicomStudiesToolbar = QtGui.QGridLayout()
+        layoutCrfs = QtGui.QVBoxLayout(tabCrfs)
+        layoutCrfsToolbar = QtGui.QGridLayout()
 
         txtFilter = QtGui.QLabel("Filter:")
 
-        layoutDicomStudiesToolbar.addWidget(txtFilter, 1, 0)
-        layoutDicomStudiesToolbar.addWidget(self.txtDicomStudiesFilter, 1, 1)
+        layoutCrfsToolbar.addWidget(txtFilter, 1, 0)
+        layoutCrfsToolbar.addWidget(self.txtCrfsFilter, 1, 1)
 
-        layoutDicomStudies.addLayout(layoutDicomStudiesToolbar)
-        layoutDicomStudies.addWidget(self.tvDicomStudies)
+        layoutCrfs.addLayout(layoutCrfsToolbar)
+        layoutCrfs.addWidget(self.tvCrfs)
+
+    def setupItems(self):
+        """
+        """
+        tabItems = QtGui.QWidget()
+
+        self.tabWidget.addTab(tabItems, "Items")
+
+        self.txtItemsFilter = QtGui.QLineEdit()
+        self.tvItems = QtGui.QTableView()
+
+        self.tvItems.setAlternatingRowColors(True)
+        self.tvItems.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.tvItems.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.tvItems.setSortingEnabled(True);
+
+        layoutItems = QtGui.QVBoxLayout(tabItems)
+        layoutItemsToolbar = QtGui.QGridLayout()
+
+        txtFilter = QtGui.QLabel("Filter:")
+
+        layoutItemsToolbar.addWidget(txtFilter, 1, 0)
+        layoutItemsToolbar.addWidget(self.txtItemsFilter, 1, 1)
+
+        layoutItems.addLayout(layoutItemsToolbar)
+        layoutItems.addWidget(self.tvItems)
+
+    def setupSummary(self):
+        """
+        """
+        # Final step = overview
+        tabSummary = QtGui.QWidget()
+
+        # Add tabs to widget
+        self.tabWidget.addTab(tabSummary, "Summary")
+
+        self.lblSummary = QtGui.QLabel("")
+        self.textBrowserProgress = QtGui.QTextBrowser()
+        self.textBrowserProgress.setObjectName(_fromUtf8("textBrowserProgress"))
+
+        self.btnUpload = QtGui.QPushButton()
+        self.btnUpload.setIcon(self.uploadIcon)
+        self.btnUpload.setIconSize(QtCore.QSize(self.toolBarButtonSize, self.toolBarButtonSize))
+
+        self.progressBar = QtGui.QProgressBar()
+
+        layoutSummary = QtGui.QVBoxLayout(tabSummary)
+
+        # Last step
+        layoutSummary.addWidget(self.lblSummary)
+        layoutSummary.addWidget(self.textBrowserProgress)
+        layoutSummary.addWidget(self.progressBar)
+        layoutSummary.addWidget(self.btnUpload)
 
 ####    ##    #######  ##    ## 
  ##   ####   ##     ## ###   ## 

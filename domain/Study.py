@@ -1,87 +1,94 @@
+#### ##     ## ########   #######  ########  ########  ######
+ ##  ###   ### ##     ## ##     ## ##     ##    ##    ##    ##
+ ##  #### #### ##     ## ##     ## ##     ##    ##    ##
+ ##  ## ### ## ########  ##     ## ########     ##     ######
+ ##  ##     ## ##        ##     ## ##   ##      ##          ##
+ ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
+#### ##     ## ##         #######  ##     ##    ##     ######
+
 class Study():
     """Study domain object
 
-    According to Operational Data Model
+    According to CDISC Operational Data Model
     """
-    #--------------------------------------------------------------------------
-    #----------------------------- Constructors -------------------------------
 
     def __init__(self, identifier="", oid="", name="", description=""):
-        """Constructor
-
+        """Default Constructor
         """
-        self.__identifier = identifier
+        self._identifier = identifier
 
         # ODM->Study->OID
-        self.__oid = oid
+        self._oid = oid
 
-        self.__name = name
+        self._name = name
 
         # ODM->Study->GlobalVariables->StudyDescription
-        self.__description = description
+        self._description = description
 
         # Study sites
-        self.__sites = []
+        self._sites = []
 
-    #--------------------------------------------------------------------------
-    #----------------------------- Properties ---------------------------------
+########  ########   #######  ########  ######## ########  ######## #### ########  ######
+##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##    ##
+##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##
+########  ########  ##     ## ########  ######   ########     ##     ##  ######    ######
+##        ##   ##   ##     ## ##        ##       ##   ##      ##     ##  ##             ##
+##        ##    ##  ##     ## ##        ##       ##    ##     ##     ##  ##       ##    ##
+##        ##     ##  #######  ##        ######## ##     ##    ##    #### ########  ######
 
+    @property
     def identifier(self):
         """Identifier Getter
         """
-        return self.__identifier
+        return self._identifier
 
-
+    @property
     def oid(self):
         """OID Getter
         """
-        return self.__oid
+        return self._oid
 
-
-    def setOid(self, oidValue):
+    @oid.setter
+    def oid(self, oidValue):
         """OID Setter
         """
-        if self.__oid != oidValue:
-            self.__oid = oidValue
+        self._oid = oidValue
 
-
+    @property
     def name(self):
         """Name Getter
         """
-        return self.__name
+        return self._name
 
-
-    def setName(self, nameValue):
+    @name.setter
+    def name(self, nameValue):
         """Name Setter
         """
-        if self.__name != nameValue:
-            self.__name = nameValue
+        self._name = nameValue
 
-
+    @property
     def description(self):
         """Description Getter
         """
-        return self.__description
+        return self._description
 
-
-    def setDescription(self, descriptionValue):
+    @description.setter
+    def description(self, descriptionValue):
         """Description Setter
         """
-        if self.__description != descriptionValue:
-            self.__description = descriptionValue
-
+        self._description = descriptionValue
 
     @property
     def sites(self):
         """Sites Getter
         """
-        return self.__sites
+        return self._sites
 
     @sites.setter
     def sites(self, sites):
         """Sites Setter
         """
-        self.__sites = sites
+        self._sites = sites
 
     @property
     def isMulticentre(self):
@@ -89,16 +96,16 @@ class Study():
         """
         return len(self.sites) > 0
 
-
-    #----------------------------------------------------
-
-    def atrSize(self):
-        """Visible attributes in import tableView
-        """
-        return 3
-
+##     ## ######## ######## ##     ##  #######  ########   ######  
+###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
+#### #### ##          ##    ##     ## ##     ## ##     ## ##       
+## ### ## ######      ##    ######### ##     ## ##     ##  ######  
+##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
+##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
+##     ## ########    ##    ##     ##  #######  ########   ######  
+    
     def __repr__(self):
         """Object representation
         """
         adr = hex(id(self)).upper()
-        return "<Study %s at %s>" % (self.__identifier, adr)
+        return "<Study identifier: %s, oid:%s at %s>" % (self.identifier, self.oid, adr)

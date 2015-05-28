@@ -1,1 +1,1 @@
-QUE_EXIT = "Do you really want to exit the client?"
+QUE_EXIT = "Do you really want to exit the OC client?"

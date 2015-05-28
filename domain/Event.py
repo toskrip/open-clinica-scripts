@@ -183,6 +183,12 @@ class Event():
         """
         return self._forms
 
+    @forms.setter
+    def forms(self, eCrfs):
+        """eCRFs Setter
+        """
+        self._forms = eCrfs
+
 ##     ## ######## ######## ##     ##  #######  ########   ######  
 ###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
 #### #### ##          ##    ##     ## ##     ## ##     ## ##       
@@ -196,11 +202,6 @@ class Event():
         """
         self._forms.append(form)
 
-    def setForms(self, value):
-        """eCRFs Setter
-        """
-        self._forms = value
-
     def hasScheduledCrf(self, formOid):
         """Verify whether the event has specific CRF scheduled
         """
@@ -209,6 +210,17 @@ class Event():
         for crf in self._forms:
             if crf.oid == formOid:
                 result = True
+                break
+
+        return result
+
+    def getCrf(self, formOid):
+        """
+        """
+        result = None
+        for crf in self._forms:
+            if crf.oid == formOid:
+                result = crf
                 break
 
         return result

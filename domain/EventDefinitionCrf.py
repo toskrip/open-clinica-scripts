@@ -4,105 +4,122 @@ class EventDefinitionCrf():
     According to Operation Data Model
     This holds the eCRF forms for StudyEventDefinition
     """
-    #--------------------------------------------------------------------------
-    #----------------------------- Constructors -------------------------------
 
-    def __init__(self, required="", doubleDataEntry="", passwordRequired="", hideCrf="", sourceDataVerificaiton="", crf=None, defaultCrfVersion=None):
-        """Constructor
+    def __init__(self, required="", doubleDataEntry="", passwordRequired="", hideCrf="", sourceDataVerification="", crf=None, defaultCrfVersion=None):
+        """Default Constructor
         """
         # ODM -> Study -> MetaDataVersion -> FormDef -> OID
-        self.__oid = ""
+        self._oid = ""
         # ODM -> Study -> MetaDataVersion -> FormDef -> Name
-        self.__name = ""
+        self._name = ""
         # ODM -> Study -> MetaDataVersion -> FormDef -> Repeating
-        self.__repeating = ""
+        self._repeating = ""
 
         # OpenClinica form details
-        self.__required = required
-        self.__doubleDataEntry = doubleDataEntry
-        self.__passwordRequired = passwordRequired
-        self.__hideCrf = hideCrf
-        self.__sourceDataVerificaiton = sourceDataVerificaiton
-        self.__crf = crf
-        self.__defaultCrfVersion = defaultCrfVersion
+        self._required = required
+        self._doubleDataEntry = doubleDataEntry
+        self._passwordRequired = passwordRequired
+        self._hideCrf = hideCrf
+        self._sourceDataVerification = sourceDataVerification
+        self._crf = crf
+        self._defaultCrfVersion = defaultCrfVersion
 
-    #--------------------------------------------------------------------------
-    #----------------------------- Properties ---------------------------------
+########  ########   #######  ########  ######## ########  ######## #### ########  ######  
+##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##    ## 
+##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##       
+########  ########  ##     ## ########  ######   ########     ##     ##  ######    ######  
+##        ##   ##   ##     ## ##        ##       ##   ##      ##     ##  ##             ## 
+##        ##    ##  ##     ## ##        ##       ##    ##     ##     ##  ##       ##    ## 
+##        ##     ##  #######  ##        ######## ##     ##    ##    #### ########  ###### 
+
+    @property
     def oid(self):
         """OID Getter
         """
-        return self.__oid
+        return self._oid
 
-
-    def setOid(self, oidValue):
+    @oid.setter
+    def oid(self, value):
         """OID Setter
         """
-        self.__oid = oidValue
+        self._oid = value
 
-
+    @property
     def name(self):
         """Name Getter
         """
-        return self.__name
+        return self._name
 
-
-    def setName(self, nameValue):
+    @name.setter
+    def name(self, value):
         """Name Setter
         """
-        self.__name = nameValue
+        self._name = value
 
-
+    @property
     def repeating(self):
         """Repeating Getter
         """
-        return self.__repeating
+        return self._repeating
 
-
-    def setRepeating(self, repeatingValue):
+    @repeating.setter
+    def repeating(self, value):
         """Repeating Setter
         """
-        self.__repeating = repeatingValue
+        self._repeating = value
 
-
+    @property
     def required(self):
         """Required Getter
         """
-        return self.__required
+        return self._required
 
-
+    @property
     def doubleDataEntry(self):
-        return self.__doubleDataEntry
+        """DoubleDataEntry Getter
+        """
+        return self._doubleDataEntry
 
-
+    @property
     def passwordRequired(self):
-        return self.__passwordRequired
+        """PasswordRequired Getter
+        """
+        return self._passwordRequired
 
-
+    @property
     def hideCrf(self):
-        return self.__hideCrf
+        """HideCrf Getter
+        """
+        return self._hideCrf
 
+    @property
+    def sourceDataVerification(self):
+        """SourceDataVerification Getter
+        """
+        return self._sourceDataVerification
 
-    def sourceDataVerificaiton(self):
-        return self.__sourceDataVerificaiton
-
-
+    @property
     def crf(self):
-        return self.__crf
+        """Crf Getter
+        """
+        return self._crf
 
-
+    @property
     def defaultCrfVersion(self):
-        return self.__defaultCrfVersion
+        """DefaultCrfVersion Getter
+        """
+        return self._defaultCrfVersion
 
-
-    #-----------------------------------------------------------------------
-
-    def atrSize(self):
-        "Visible attributes in import table view"
-        return 3
+##     ## ######## ######## ##     ##  #######  ########   ######  
+###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
+#### #### ##          ##    ##     ## ##     ## ##     ## ##       
+## ### ## ######      ##    ######### ##     ## ##     ##  ######  
+##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
+##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
+##     ## ########    ##    ##     ##  #######  ########   ######  
 
     def __repr__(self):
         """Object representation
         """
         adr = hex(id(self)).upper()
-        return "<Event Def CRF oid: %s, name: %s at %s>" % (self.oid(), self.name(), adr)
-
+        return "<Event Def CRF oid: %s, name: %s at %s>" % (self.oid, self.name, adr)

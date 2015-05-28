@@ -114,7 +114,7 @@ class OCStudyWsService():
         query = """<?xml version="1.0" encoding="UTF-8"?>
             <getMetadataRequest>
             <v1:studyMetadata xmlns:v1="http://openclinica.org/ws/study/v1">
-            <bean:identifier xmlns:bean="http://openclinica.org/ws/beans">""" + study.identifier().encode("utf-8") + """</bean:identifier>
+            <bean:identifier xmlns:bean="http://openclinica.org/ws/beans">""" + study.identifier.encode("utf-8") + """</bean:identifier>
             </v1:studyMetadata>
             </getMetadataRequest>"""
 

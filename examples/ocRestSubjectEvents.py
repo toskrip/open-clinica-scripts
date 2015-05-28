@@ -57,9 +57,9 @@ UserDetails().username = OCUserDetails().username
 UserDetails().clearpass = password
 
 svcHttp = HttpConnectionService(
-	ConfigDetails().ocHost, 
-	ConfigDetails().ocPort, 
-	UserDetails()
+    ConfigDetails().ocHost, 
+    ConfigDetails().ocPort, 
+    UserDetails()
 )
 
 restSubjects = svcHttp.getStudyCasebookSubjects(
@@ -73,4 +73,31 @@ for studySubject in studySubjects:
             studySubject.oid = sREST.oid
             break
 
-    print studySubject
+subjectOid = "SS_1"
+for subject in studySubjects:
+    if subject.oid == subjectOid:
+        selectedStudySubject = subject
+        break
+
+restEvents = svcHttp.getStudyCasebookEvents( 
+        [ConfigDetails().ocHost, selectedStudy.oid, selectedStudySubject.oid]
+    )
+
+
+# SOAP events
+for event in selectedStudySubject.events:
+    # Enhance with information from REST
+    for e in restEvents:
+        if e.eventDefinitionOID == event.eventDefinitionOID and e.startDate.isoformat() == event.startDate.isoformat():
+            # Read status and repeat key (repeat key importat for import)
+            event.status = e.status
+            event.studyEventRepeatKey = e.studyEventRepeatKey
+            
+            # Detailed forms
+            event.forms = e.forms
+            
+            print event
+            for crf in event.forms:
+                print crf
+                for item in crf.items:
+                    print item
