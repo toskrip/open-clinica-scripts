@@ -52,6 +52,7 @@ class ItemImportDialog(QtGui.QDialog, ItemImportDialogUI):
 
         # Handlers
         self.connect(self.txtItemValueINT, QtCore.SIGNAL("textChanged(QString)"), self.intValueChanged)
+        self.connect(self.txtItemValueST, QtCore.SIGNAL("textChanged(QString)"), self.stringValueChanged)
         self.btnOk.clicked.connect(self.btnOkClicked)
 
 ########  ########   #######  ########  ######## ########  ######## #### ########  ######
@@ -115,6 +116,11 @@ class ItemImportDialog(QtGui.QDialog, ItemImportDialogUI):
         self._study.studyType = value
 
     def intValueChanged(self, value):
+        """
+        """
+        self._item.value = str(value)
+
+    def stringValueChanged(self, value):
         """
         """
         self._item.value = str(value)

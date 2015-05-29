@@ -138,52 +138,76 @@ class OcModuleUI(object):
     def setupSubjects(self):
         """
         """
+        # Tab
         tabSubjects = QtGui.QWidget()
-
         self.tabWidget.addTab(tabSubjects, "Study subjects")
 
-        self.txtStudySubjectFilter = QtGui.QLineEdit()
-        self.tvStudySubjects = QtGui.QTableView()
+        # Toolbar with buttons
+        self.btnReloadStudySubjects = QtGui.QPushButton()
+        self.btnReloadStudySubjects.setIcon(self.reloadIcon)
+        self.btnReloadStudySubjects.setToolTip("Reload study subjects")
+        self.btnReloadStudySubjects.setIconSize(QtCore.QSize(self.toolBarButtonSize, self.toolBarButtonSize))
 
+        self.btnNewStudySubject = QtGui.QPushButton()
+        self.btnNewStudySubject.setIcon(self.newIcon)
+        self.btnNewStudySubject.setToolTip("Create a new study subject")
+        self.btnNewStudySubject.setIconSize(QtCore.QSize(self.toolBarButtonSize, self.toolBarButtonSize))
+        
+        subjectToolbar = QtGui.QHBoxLayout()
+        subjectToolbar.addWidget(self.btnReloadStudySubjects)
+        subjectToolbar.addWidget(self.btnNewStudySubject)
+        subjectToolbar.addStretch(1)
+
+        # Filter
+        self.txtStudySubjectFilter = QtGui.QLineEdit()
+        subjectFilterLayout = QtGui.QFormLayout()
+        subjectFilterLayout.addRow("Filter:", self.txtStudySubjectFilter)
+
+        # Data table
+        self.tvStudySubjects = QtGui.QTableView()
         self.tvStudySubjects.setAlternatingRowColors(True)
         self.tvStudySubjects.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.tvStudySubjects.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.tvStudySubjects.setSortingEnabled(True);
-
+    
+        # Layout
         layoutSubjects = QtGui.QVBoxLayout(tabSubjects)
-        layoutSubjectsToolbar = QtGui.QGridLayout()
-
-        txtFilter = QtGui.QLabel("Filter:")
-        layoutSubjectsToolbar.addWidget(txtFilter, 1, 0)
-        layoutSubjectsToolbar.addWidget(self.txtStudySubjectFilter, 1, 1)
-
-        layoutSubjects.addLayout(layoutSubjectsToolbar)
+        layoutSubjects.addLayout(subjectToolbar)
+        layoutSubjects.addLayout(subjectFilterLayout)
         layoutSubjects.addWidget(self.tvStudySubjects)
 
     def setupEvents(self):
         """
         """
         tabEvents = QtGui.QWidget()
-
         self.tabWidget.addTab(tabEvents, "Study events")
 
+        # Toolbar with buttons
+        self.btnNewEvent = QtGui.QPushButton()
+        self.btnNewEvent.setIcon(self.newIcon)
+        self.btnNewEvent.setToolTip("Schedule a new study event")
+        self.btnNewEvent.setIconSize(QtCore.QSize(self.toolBarButtonSize, self.toolBarButtonSize))
+        
+        eventToolbar = QtGui.QHBoxLayout()
+        eventToolbar.addWidget(self.btnNewEvent)
+        eventToolbar.addStretch(1) 
+
+        # Filter
         self.txtStudyEventFilter = QtGui.QLineEdit()
         self.txtStudyEventFilter.setDisabled(1)
-        self.tvStudyEvents = QtGui.QTableView()
+        eventFilterLayout = QtGui.QFormLayout()
+        eventFilterLayout.addRow("Filter:", self.txtStudyEventFilter)
 
+        # Data table
+        self.tvStudyEvents = QtGui.QTableView()
         self.tvStudyEvents.setAlternatingRowColors(True)
         self.tvStudyEvents.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.tvStudyEvents.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         #self.tvStudyEvents.setSortingEnabled(True);
 
         layoutEvents = QtGui.QVBoxLayout(tabEvents)
-        layoutEventsToolbar = QtGui.QGridLayout()
-
-        txtFilter = QtGui.QLabel("Filter:")
-        layoutEventsToolbar.addWidget(txtFilter, 1, 0)
-        layoutEventsToolbar.addWidget(self.txtStudyEventFilter, 1, 1)
-
-        layoutEvents.addLayout(layoutEventsToolbar)
+        layoutEvents.addLayout(eventToolbar)
+        layoutEvents.addLayout(eventFilterLayout)
         layoutEvents.addWidget(self.tvStudyEvents)
 
     def setupCrfs(self):

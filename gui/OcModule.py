@@ -24,6 +24,8 @@ from contexts.UserDetails import UserDetails
 
 # Module UI
 from gui.OcModuleUI import OcModuleUI
+from gui.NewSubjectDialog import NewSubjectDialog
+from gui.NewEventDialog import NewEventDialog
 from gui.ItemImportDialog import ItemImportDialog
 
 # Services
@@ -81,6 +83,9 @@ class OcModule(QWidget, OcModuleUI):
         self.lblOcConnection.setText("[" + OCUserDetails().username + "] " + ConfigDetails().ocHost)
 
         # Register handlers
+        self.btnReloadStudySubjects.clicked.connect(self.btnReloadStudySubjectsClicked)
+        self.btnNewStudySubject.clicked.connect(self.btnNewStudySubjectClicked)
+        self.btnNewEvent.clicked.connect(self.btnNewEventClicked)
         self.btnUpload.clicked.connect(self.btnImportClicked)
         self.cmbStudy.currentIndexChanged["QString"].connect(self.cmbStudyChanged)
         self.destroyed.connect(self.handleDestroyed)
@@ -110,7 +115,9 @@ class OcModule(QWidget, OcModuleUI):
         )
     
         # Reload study sites
-        self.reloadStudySites()
+        if self._selectedStudy:
+            self._logger.debug("Selected study: %s" % (self._selectedStudy.name))
+            self.reloadStudySites()
 
     def tblStudyItemChanged(self, current, previous):
         """Event handler which is triggered when selectedStudy change
@@ -137,6 +144,34 @@ class OcModule(QWidget, OcModuleUI):
         # Get the study metadata
         self.reloadStudyMetadata()
 
+    def btnReloadStudySubjectsClicked(self):
+        """Reload study subjects button clicked
+        """
+        # Reload
+        self.reloadSubjects()
+
+    def btnNewStudySubjectClicked(self):
+        """New study subject button clicked
+        """
+        if (self._selectedStudy):
+            # Initialize dialog and bind data to UI
+            dialog = NewSubjectDialog(self)
+            dialog.setData(self._selectedStudy, self._selectedStudySite)
+
+            # When ok commit session transaction
+            if dialog.exec_() == QtGui.QDialog.Accepted:
+                try:
+                    newStudySubject = dialog.newStudySubject
+                    self.ocWebServices.createStudySubject(
+                        newStudySubject, 
+                        self._selectedStudy
+                    )
+                except:
+                    QtGui.QMessageBox.warning(self, "Error", "OC study subject not created.")
+
+            # Reload
+            self.reloadSubjects()
+
     def tblStudySubjectItemChanged(self, current, previous):
         """Event handler which is triggered when selectedStudySubject change
         """
@@ -156,8 +191,40 @@ class OcModule(QWidget, OcModuleUI):
                     )
                 )
 
-            # Load scheduled events for selected subject
-            self.reloadEvents()
+            if self._selectedStudySubject:
+
+                # Load scheduled events for selected subject
+                self.reloadEvents()
+
+    def btnNewEventClicked(self):
+        """Schedule new study event button clicked
+        """
+        events = self.ocWebServices.listAllStydyEventDefinitionsByStudy(
+            self._selectedStudy
+        )
+
+        # Initialize dialog and bind data to UI
+        dialog = NewEventDialog(self)
+        dialog.setData(
+            self._selectedStudy, 
+            self._selectedStudySite,
+            self._selectedStudySubject,
+            events
+        )
+
+        # When ok commit session transaction
+        if dialog.exec_() == QtGui.QDialog.Accepted:
+                newEvent = dialog.selectedEvent
+
+                self.ocWebServices.scheduleStudyEvent(
+                    self._selectedStudy, 
+                    self._selectedStudySubject, 
+                    newEvent
+                )
+
+        # Reload
+        self.reloadSubjects()
+        self.reloadEvents()
             
     def tblStudyEventItemChanged(self, current, previous):
         """Event handler which is triggered when selectedStudyEventDefintion change
@@ -647,7 +714,17 @@ class OcModule(QWidget, OcModuleUI):
             else:
                 self.textBrowserProgress.append("Import Error. Cannot continue.")
 
-        self.ImportFinishedMessage()
+            self.tabWidget.setEnabled(True)
+            self.window().statusBar.showMessage("Ready")
+            self.window().disableIndefiniteProgess()
+            self.Message("Import finished.")
+        else:
+            self.tabWidget.setEnabled(True)
+            self.window().statusBar.showMessage("Ready")
+            self.window().disableIndefiniteProgess()
+
+        self.btnUpload.setDisabled(False)
+
         return
 
     def loadStudiesFinished(self, studies):
@@ -859,11 +936,3 @@ class OcModule(QWidget, OcModuleUI):
         """Called from log event in thread and adds log into textbrowser UI
         """
         self.textBrowserProgress.append(string)
-
-    def ImportFinishedMessage(self):
-        """ Called after uploadDataThread finished, after the data were uploaded to
-        the RadPlanBio server
-        """
-        # Enable upload button
-        self.btnUpload.setEnabled(True)
-        self.window().statusBar.showMessage("Ready")

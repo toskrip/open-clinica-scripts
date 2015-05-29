@@ -1,33 +1,35 @@
-#----------------------------------------------------------------------
-#------------------------------ Modules -------------------------------
-# PyQt
-from datetime import datetime
-import sys
+#### ##     ## ########   #######  ########  ########  ######
+ ##  ###   ### ##     ## ##     ## ##     ##    ##    ##    ##
+ ##  #### #### ##     ## ##     ## ##     ##    ##    ##
+ ##  ## ### ## ########  ##     ## ########     ##     ######
+ ##  ##     ## ##        ##     ## ##   ##      ##          ##
+ ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
+#### ##     ## ##         #######  ##     ##    ##     ######
 
-from PyQt4 import QtGui, QtCore, uic
-from PyQt4.QtCore import pyqtSlot, SIGNAL, SLOT
-
-from domain.Event import Event
-from domain.Person import Person
-from domain.StudySubject import StudySubject
-from domain.Subject import Subject
-from utils import first
 
 
 # Standard
-# Date
+import sys
+from datetime import datetime
+
+# PyQt
+from PyQt4 import QtGui, QtCore, uic
+from PyQt4.QtCore import pyqtSlot, SIGNAL, SLOT
+
 # Domain
+from domain.Event import Event
+from domain.StudySubject import StudySubject
+from domain.Subject import Subject
+
 # Utils
-#----------------------------------------------------------------------
+from utils import first
+
 class NewEventDialog(QtGui.QDialog):
     """New subject
     """
 
-    #----------------------------------------------------------------------
-    #--------------------------- Constructors -----------------------------
-
     def __init__(self, parent = None):
-        """
+        """Default Constructor
         """
         QtGui.QDialog.__init__(self, parent)
 
@@ -111,8 +113,13 @@ class NewEventDialog(QtGui.QDialog):
     def setData(self, study, site, subject, studyEvents):
         """
         """
-        self.lblStudyAndSite.setText(study.name() + " : " + site.name)
-        self.lblSubject.setText(subject.subject.uniqueIdentifier)
+        if study and site:
+            studyText = study.name + " : " + site.name
+        else:
+            studyText = study.name 
+
+        self.lblStudyAndSite.setText(studyText)
+        self.lblSubject.setText(subject.label)
 
         self.studyEvents = studyEvents
         self.unsheduledEvents = []
@@ -120,16 +127,8 @@ class NewEventDialog(QtGui.QDialog):
         for event in studyEvents:
             exists = False
 
-            # I have to show all of them because there is no way of
-            # getting the information whether the event is repeating or not
-
-            # for subjectEvent in subject.events:
-            #     if subjectEvent.eventDefinitionOID == event.oid():
-            #         exists = True
-            #         break
-
             if (not exists):
-                self.unsheduledEvents.append(event.oid())
+                self.unsheduledEvents.append(event.oid)
 
         self.cmbStudyEvents.addItems(self.unsheduledEvents)
 
@@ -139,7 +138,9 @@ class NewEventDialog(QtGui.QDialog):
     def cmbStudyEventsChanged(self, text):
         """
         """
-        self.selectedEvent = first.first(unsheduledEvent for unsheduledEvent in self.studyEvents  if unsheduledEvent.oid() == text)
+        self.selectedEvent = first.first(
+            unsheduledEvent for unsheduledEvent in self.studyEvents  if unsheduledEvent.oid == text
+        )
 
     #----------------------------------------------------------------------
     #------------------- Dialog Buttons Handlers --------------------------
@@ -150,7 +151,7 @@ class NewEventDialog(QtGui.QDialog):
         if (self.selectedEvent is not None):
             self.accept()
         else:
-            QtGui.QMessageBox.warning(self, 'Error', 'Data is not valied.')
+            QtGui.QMessageBox.warning(self, "Error", "Data is not valied")
 
 
     def handleCancel(self):
