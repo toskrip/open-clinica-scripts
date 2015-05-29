@@ -5,6 +5,8 @@ OpenClinica scripts + OC Desktop client
 
 Dependencies:
 
+Python 2.7
+
 GUI + threading:
 
 PyQt4: http://www.riverbankcomputing.com/software/pyqt/download
