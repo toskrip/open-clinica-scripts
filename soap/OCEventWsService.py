@@ -94,12 +94,12 @@ class OCEventWsService():
             <scheduleRequest>
             <v1:event xmlns:v1="http://openclinica.org/ws/event/v1">
             <bean:studySubjectRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:label>""" + studySubject.label  + """</bean:label>
+            <bean:label>""" + studySubject.label + """</bean:label>
             </bean:studySubjectRef>
             <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
             <bean:identifier>""" + study.identifier + """</bean:identifier>
             </bean:studyRef>
-            <bean:eventDefinitionOID xmlns:bean="http://openclinica.org/ws/beans">""" +  event.oid() + """</bean:eventDefinitionOID>
+            <bean:eventDefinitionOID xmlns:bean="http://openclinica.org/ws/beans">""" +  event.oid + """</bean:eventDefinitionOID>
             <bean:startDate xmlns:bean="http://openclinica.org/ws/beans">""" + datetime.strftime(datetime.now(), "%Y-%m-%d") + """</bean:startDate>
             </v1:event>
             </scheduleRequest>""")

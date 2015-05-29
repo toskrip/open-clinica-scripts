@@ -302,14 +302,19 @@ class HttpConnectionService(object):
                                                         Crf(fd["@OID"], fd["@Name"])
                                                     )
 
-                                                    # Collect references to ItemGroups
-                                                    igRef = fd["ItemGroupRef"]
-                                                    if type(igRef) is list:
-                                                        for igr in igRef:
-                                                            itemGroupOids.append(igr["@ItemGroupOID"])
-                                                    elif type (igRef) is dict:
-                                                        igr = igRef
-                                                        itemGroupOids.append(igr["@ItemGroupOID"])
+                                            else:
+                                                if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
+                                                    crf = event.getCrf(fd["@OID"])
+                                                    crf.name = fd["@Name"]
+
+                                            # Collect references to ItemGroups in any case
+                                            igRef = fd["ItemGroupRef"]
+                                            if type(igRef) is list:
+                                                for igr in igRef:
+                                                    itemGroupOids.append(igr["@ItemGroupOID"])
+                                            elif type (igRef) is dict:
+                                                igr = igRef
+                                                itemGroupOids.append(igr["@ItemGroupOID"])
 
                                 elif type(formDefinition) is dict:
                                     fd = formDefinition
@@ -320,14 +325,19 @@ class HttpConnectionService(object):
                                                     Crf(fd["@OID"], fd["@Name"])
                                                 )
 
-                                                # Collect references to ItemGroups
-                                                igRef = fd["ItemGroupRef"]
-                                                if type(igRef) is list:
-                                                    for igr in igRef:
-                                                        itemGroupOids.append(igr["@ItemGroupOID"])
-                                                elif type (igRef) is dict:
-                                                    igr = igRef
-                                                    itemGroupOids.append(igr["@ItemGroupOID"])
+                                        else:
+                                            if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
+                                                crf = event.getCrf(fd["@OID"])
+                                                crf.name = fd["@Name"]
+
+                                        # Collect references to ItemGroups in any case
+                                        igRef = fd["ItemGroupRef"]
+                                        if type(igRef) is list:
+                                            for igr in igRef:
+                                                itemGroupOids.append(igr["@ItemGroupOID"])
+                                        elif type (igRef) is dict:
+                                            igr = igRef
+                                            itemGroupOids.append(igr["@ItemGroupOID"])
 
                                 # Discover items base on theri refOIDs
                                 itemOids = []
@@ -466,7 +476,7 @@ class HttpConnectionService(object):
                                     crf.status = frm["@OpenClinica:Status"]
                                     event.addCrf(crf)
 
-                            # + automatically schedule default version (if it is not)
+                            # + automatically default version (if it is not)
                             eventFormOids = []
                             eventDefinition = r.json()["Study"]["MetaDataVersion"]["StudyEventDef"]
                             if type(eventDefinition) is list:
@@ -496,15 +506,20 @@ class HttpConnectionService(object):
                                                 event.addCrf(
                                                     Crf(fd["@OID"], fd["@Name"])
                                                 )
+                                        else:
+                                            if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
+                                                crf = event.getCrf(fd["@OID"])
+                                                crf.name = fd["@Name"]
 
-                                                # Collect references to ItemGroups
-                                                igRef = fd["ItemGroupRef"]
-                                                if type(igRef) is list:
-                                                    for igr in igRef:
-                                                        itemGroupOids.append(igr["@ItemGroupOID"])
-                                                elif type (igRef) is dict:
-                                                    igr = igRef
-                                                    itemGroupOids.append(igr["@ItemGroupOID"])
+                                        # Collect references to ItemGroups in any case
+                                        igRef = fd["ItemGroupRef"]
+                                        if type(igRef) is list:
+                                            for igr in igRef:
+                                                itemGroupOids.append(igr["@ItemGroupOID"])
+                                        elif type (igRef) is dict:
+                                            igr = igRef
+                                            itemGroupOids.append(igr["@ItemGroupOID"])
+
                             elif type(formDefinition) is dict:
                                 fd = formDefinition
                                 if fd["@OID"] in eventFormOids:
@@ -513,15 +528,19 @@ class HttpConnectionService(object):
                                             event.addCrf(
                                                 Crf(fd["@OID"], fd["@Name"])
                                             )
+                                    else:
+                                        if fd["OpenClinica:FormDetails"]["OpenClinica:PresentInEventDefinition"]["@IsDefaultVersion"] == "Yes":
+                                            crf = event.getCrf(fd["@OID"])
+                                            crf.name = fd["@Name"]
 
-                                            # Collect references to ItemGroups
-                                            igRef = fd["ItemGroupRef"]
-                                            if type(igRef) is list:
-                                                for igr in igRef:
-                                                    itemGroupOids.append(igr["@ItemGroupOID"])
-                                            elif type (igRef) is dict:
-                                                igr = igRef
-                                                itemGroupOids.append(igr["@ItemGroupOID"])
+                                    # Collect references to ItemGroups in any case
+                                    igRef = fd["ItemGroupRef"]
+                                    if type(igRef) is list:
+                                        for igr in igRef:
+                                            itemGroupOids.append(igr["@ItemGroupOID"])
+                                    elif type (igRef) is dict:
+                                        igr = igRef
+                                        itemGroupOids.append(igr["@ItemGroupOID"])
 
                             # Discover items base on theri refOIDs
                             itemOids = []
