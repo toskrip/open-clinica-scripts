@@ -47,7 +47,7 @@ else:
         [selectedStudy, studyMetadata]
     )
 
-sid = "2"
+sid = "12"
 for studySubject in studySubjects:
     if studySubject.label == sid:
         selectedStudySubject = studySubject

@@ -3,15 +3,15 @@ open-clinica-scripts
 
 OpenClinica scripts + OC Desktop client
 
+
 Dependencies:
+====================
 
 Python 2.7
 
-GUI + threading:
+GUI + threading: PyQt4: http://www.riverbankcomputing.com/software/pyqt/download
 
-PyQt4: http://www.riverbankcomputing.com/software/pyqt/download
-
-pysimplesoap: https://github.com/pysimplesoap/pysimplesoap
+pysimplesoap (patched): http://skripcak.net/pysimplesoap.zip
 
 requests: pip install requests, easy_install requests
 
@@ -23,7 +23,7 @@ xml.etree.ElementTree
 
 logging
 
-socks
+socks: pip install PySocks
 
 datetime
 
@@ -32,3 +32,9 @@ string
 hashlib
 
 ConfigParser
+
+
+Optional for application packing:
+====================
+
+PyInstaller: http://skripcak.net/PyInstaller-2.1.zip

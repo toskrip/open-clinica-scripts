@@ -223,8 +223,10 @@ class OcModule(QWidget, OcModuleUI):
                 )
 
         # Reload
+        temp = self._selectedStudySubject
         self.reloadSubjects()
-        self.reloadEvents()
+        self._selectedStudySubject = temp
+        #self.reloadEvents()
             
     def tblStudyEventItemChanged(self, current, previous):
         """Event handler which is triggered when selectedStudyEventDefintion change

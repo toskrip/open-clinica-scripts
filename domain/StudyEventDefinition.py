@@ -52,7 +52,7 @@ class StudyEventDefinition():
     def name(self):
         """Name Getter
         """
-        return self.__name
+        return self._name
 
     @name.setter
     def name(self, value):

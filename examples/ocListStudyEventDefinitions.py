@@ -41,6 +41,6 @@ eventDefinitions = ocWebServices.listAllStydyEventDefinitionsByStudy(selectedStu
 
 for ed in eventDefinitions:
     print ed
-    for edCrf in ed.eventDefinitionCrfs():
-        print edCrf.crf()
+    for edCrf in ed.eventDefinitionCrfs:
+        print edCrf.crf
         
