@@ -53,8 +53,8 @@ newStudySubject.label = ""
 # Based on metadata (can be optional)
 newStudySubject.subject.uniqueIdentifier = ""
 
-# SecondaryId, BUG OC ignores secondary ID
-#newStudySubject.secondaryId = ""
+# SecondaryId (optional)
+newStudySubject.secondaryId = ""
 
 # Should depend on study configuration, BUG OC always requires gender
 newStudySubject.subject.gender = "f"

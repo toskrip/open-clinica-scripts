@@ -323,6 +323,7 @@ class OCStudySubjectWsService():
             <createRequest>
             <v1:studySubject xmlns:v1="http://openclinica.org/ws/studySubject/v1">
             <bean:label xmlns:bean="http://openclinica.org/ws/beans">""" + studySubject.label + """</bean:label>
+	    <bean:secondaryLabel xmlns:bean="http://openclinica.org/ws/beans">""" + studySubject.secondaryId + """</bean:secondaryLabel>
             <bean:enrollmentDate xmlns:bean="http://openclinica.org/ws/beans">
             """ + studySubject.enrollmentDate.isoformat() + """
             </bean:enrollmentDate>
