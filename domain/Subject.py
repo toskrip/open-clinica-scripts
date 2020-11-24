@@ -1,11 +1,33 @@
-class Subject():
-    """Representation of subject
+#### ##     ## ########   #######  ########  ########  ######
+ ##  ###   ### ##     ## ##     ## ##     ##    ##    ##    ##
+ ##  #### #### ##     ## ##     ## ##     ##    ##    ##
+ ##  ## ### ## ########  ##     ## ########     ##     ######
+ ##  ##     ## ##        ##     ## ##   ##      ##          ##
+ ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
+#### ##     ## ##         #######  ##     ##    ##     ######
+
+# Datetime
+from datetime import datetime
+
+
+class Subject(object):
+    """Representation of RPB study subject entity
+    
+    RPB study subject is RPB middleware entity that can
+    aggregate patient data across RPB subsystems (EDC, PACS, PID)
     """
+
+ ######   #######  ##    ##  ######  ######## ########  ##     ##  ######  ######## 
+##    ## ##     ## ###   ## ##    ##    ##    ##     ## ##     ## ##    ##    ##    
+##       ##     ## ####  ## ##          ##    ##     ## ##     ## ##          ##    
+##       ##     ## ## ## ##  ######     ##    ########  ##     ## ##          ##    
+##       ##     ## ##  ####       ##    ##    ##   ##   ##     ## ##          ##    
+##    ## ##     ## ##   ### ##    ##    ##    ##    ##  ##     ## ##    ##    ##    
+ ######   #######  ##    ##  ######     ##    ##     ##  #######   ######     ##  
 
     def __init__(self, uniqueIdentifier="", gender=""):
         """Default Constructor
         """
-
         # OC OID
         self._oid = ""
         # OC StudySubjectID
@@ -22,8 +44,17 @@ class Subject():
         self._dateOfBirth = ""
         self._yearOfBirth = ""
 
-        # Subject can be person
+        # Subject can be person with identity
         self._person = None
+
+        # StudySubject status
+        self._status = ""
+
+        # Subject can have associated DICOM studies
+        self._dicomData = []
+
+        # Subject can have scheduled study events
+        self._studyEventData = []
 
 ########  ########   #######  ########  ######## ########  ######## #### ########  ######
 ##     ## ##     ## ##     ## ##     ## ##       ##     ##    ##     ##  ##       ##    ##
@@ -56,10 +87,11 @@ class Subject():
         return self._uniqueIdentifier
 
     @uniqueIdentifier.setter
-    def uniqueIdentifier(self, uniqueIdentifierValue):
+    def uniqueIdentifier(self, value):
         """PID Setter
         """
-        self._uniqueIdentifier = uniqueIdentifier
+        if self._uniqueIdentifier != value:
+            self._uniqueIdentifier = value
 
     @property
     def gender(self):
@@ -71,8 +103,9 @@ class Subject():
     def gender(self, genderValue):
         """Gender Setter (m or f)
         """
-        if genderValue == "m" or genderValue == "f":
-            self._gender = genderValue
+        if self._gender != genderValue:
+            if genderValue == "m" or genderValue == "f":
+                self._gender = genderValue
 
     @property
     def person(self):
@@ -87,23 +120,74 @@ class Subject():
         self._person = personRef
 
     @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, value):
+        self._status = value
+
+    @property
     def dateOfBirth(self):
+        """Date of birth Getter
+        """
         return self._dateOfBirth
+
+    @dateOfBirth.setter
+    def dateOfBirth(self, value):
+        """Date of birth Setter
+        """
+        self._dateOfBirth = value
 
     @property
     def yearOfBirth(self):
+        """Year of birth Getter
+        """
+        if self._yearOfBirth is not None and self._yearOfBirth != "":
+            return self._yearOfBirth
+        elif self._dateOfBirth is not None and self._dateOfBirth != "":
+            edcDateFormat = "%Y-%m-%d"
+            return datetime.strptime(self._dateOfBirth, edcDateFormat).year
+
         return self._yearOfBirth
 
-##     ## ######## ######## ##     ##  #######  ########   ######  
-###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
-#### #### ##          ##    ##     ## ##     ## ##     ## ##       
-## ### ## ######      ##    ######### ##     ## ##     ##  ######  
-##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
-##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
-##     ## ########    ##    ##     ##  #######  ########   ######  
-
-    def __repr__(self):
-        """Object representation
+    @yearOfBirth.setter
+    def yearOfBirth(self, value):   
+        """Year of birth Setter
         """
-        adr = hex(id(self)).upper()
-        return "<StudySubject oid: %s, ssid: %s at %s>" % (self.oid, self.studySubjectId, adr)
+        self._yearOfBirth = value
+
+    @property 
+    def dicomData(self):
+        """DICOM studies Getter
+        """
+        return self._dicomData
+
+    @dicomData.setter
+    def dicomData(self, dicomData):
+        """DICOM data Setter
+        """
+        self._dicomData = dicomData
+
+    @property
+    def studyEventData(self):
+        """Scheduled study events Getter
+        """
+        return self._studyEventData
+
+    @studyEventData.setter
+    def studyEventData(self, studyEventData):
+        """Scheduled study events Setter
+        """
+        self._studyEventData = studyEventData
+
+##     ## ######## ######## ##     ##  #######  ########   ######
+###   ### ##          ##    ##     ## ##     ## ##     ## ##    ##
+#### #### ##          ##    ##     ## ##     ## ##     ## ##
+## ### ## ######      ##    ######### ##     ## ##     ##  ######
+##     ## ##          ##    ##     ## ##     ## ##     ##       ##
+##     ## ##          ##    ##     ## ##     ## ##     ## ##    ##
+##     ## ########    ##    ##     ##  #######  ########   ######
+
+    def atrSize(self):
+        return 2

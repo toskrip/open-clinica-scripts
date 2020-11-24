@@ -160,14 +160,14 @@ class OcModule(QWidget, OcModuleUI):
 
             # When ok commit session transaction
             if dialog.exec_() == QtGui.QDialog.Accepted:
-                try:
-                    newStudySubject = dialog.newStudySubject
-                    self.ocWebServices.createStudySubject(
-                        newStudySubject, 
-                        self._selectedStudy
-                    )
-                except:
-                    QtGui.QMessageBox.warning(self, "Error", "OC study subject not created.")
+                #try:
+                newStudySubject = dialog.newStudySubject
+                self.ocWebServices.createStudySubject(
+                    newStudySubject, 
+                    self._selectedStudy
+                )
+                #except:
+                #    QtGui.QMessageBox.warning(self, "Error", "OC study subject not created.")
 
             # Reload
             self.reloadSubjects()
@@ -180,8 +180,8 @@ class OcModule(QWidget, OcModuleUI):
         self.tvItems.setModel(None)
         self.textBrowserProgress.clear()
 
-        # Take the second column (StudySubjectID) of selected row from table view
-        column = 1
+        # Take the first column of selected row from table view (StudySubjectID)
+        column = 0
         index = self.studySubjectProxyModel.index(current.row(), column);
         print index.data().toPyObject()
         if index.data().toPyObject(): 
@@ -375,6 +375,8 @@ class OcModule(QWidget, OcModuleUI):
         # ODM XML metadata processing
         self.svcOdm = OdmFileDataService()
 
+        self._canUseSSIDinREST = True
+
     def reloadData(self):
         """Initialization of data for UI
         """
@@ -537,24 +539,25 @@ class OcModule(QWidget, OcModuleUI):
         # Start thread
         self._threadPool[len(self._threadPool) - 1].start()
 
-        # TODO: it would be much faster if I request REST subject only for the selected one
-        # TODO: however we have to migrate to a new version of OC first
-        # Need to get OIDs of subjects
-        self._threadPool.append(
+        # Need to get OIDs of all subjects
+        if not self._canUseSSIDinREST:  
+            self.logger.debug("Continuing with RESTfull URL to get OIDs for all study subjects")
+
+            self._threadPool.append(
                 WorkerThread(
                     self.svcHttp.getStudyCasebookSubjects, [ConfigDetails().ocHost, self.getStudyOid()]
                 )
             )
 
-        # Connect slots
-        self.connect(
-            self._threadPool[len(self._threadPool) - 1],
-            QtCore.SIGNAL("finished(QVariant)"),
-            self.loadSubjectsRESTFinished
-        )
+            # Connect slots
+            self.connect(
+                self._threadPool[len(self._threadPool) - 1],
+                QtCore.SIGNAL("finished(QVariant)"),
+                self.loadSubjectsRESTFinished
+            )
 
-        # Start thread
-        self._threadPool[len(self._threadPool) - 1].start()
+            # Start thread
+            self._threadPool[len(self._threadPool) - 1].start()
 
     def reloadEvents(self):
         """Reload OpenClinica events scheduled for selected study subject
@@ -564,15 +567,29 @@ class OcModule(QWidget, OcModuleUI):
         self.window().enableIndefiniteProgess()
         self.tabWidget.setEnabled(False)
 
-        # Define a job
-        # Need to get EventRepeatKeys
-        self._threadPool.append(
-                WorkerThread(
-                        self.svcHttp.getStudyCasebookEvents, 
-                        [ConfigDetails().ocHost, self.getStudyOid(), self._selectedStudySubject.oid]
-                    )
-            )
+        studySubjectIdentifier = self._selectedStudySubject.label
+        if not self._canUseSSIDinREST:
+            studySubjectIdentifier = self._selectedStudySubject.oid
 
+             # Define a job
+            # Need to get EventRepeatKeys
+            self._threadPool.append(
+                WorkerThread(
+                    self.svcHttp.getStudyCasebookEvents, 
+                    [ConfigDetails().ocHost, self.getStudyOid(), studySubjectIdentifier]
+                )
+            )
+        else:
+
+            # Define a job
+            # Need to get EventRepeatKeys
+            self._threadPool.append(
+                WorkerThread(
+                    self.svcHttp.getStudyCasebookSubjectWithEvents,
+                    [ConfigDetails().ocHost, self.getStudyOid(), studySubjectIdentifier]
+                )
+            )
+            
         # Connect slots
         self.connect(
             self._threadPool[len(self._threadPool) - 1],
@@ -733,7 +750,13 @@ class OcModule(QWidget, OcModuleUI):
         """Finished loading studies from server
         """
         self._studies = studies.toPyObject()
-        self._studies .sort(cmp = lambda x, y: cmp(x.name(), y.name()))
+
+        if sys.version < "3":
+            self._studies = studies.toPyObject()
+            self._studies.sort(cmp=lambda x, y: cmp(x.name, y.name))
+        else:
+            self._studies = studies
+            self._studies = sorted(self._studies, key=lambda st: st.name)
 
         # And prepare ViewModel for the GUI
         studiesModel = QtGui.QStandardItemModel()
@@ -767,7 +790,70 @@ class OcModule(QWidget, OcModuleUI):
         """Finished loading of SOAP subject data
         """
         self._studySubjects = subjects.toPyObject()
-        self.syncSubjectAndRESTSubjects()
+        if not self._canUseSSIDinREST:
+            self.syncSubjectAndRESTSubjects()
+        elif self._studySubjects is not None:
+            # Create the ViewModels for Views
+            self.subjectsModel = QtGui.QStandardItemModel()
+            self.subjectsModel.setHorizontalHeaderLabels(
+                ["StudySubjectID", "PID", "SecondaryID", "Gender", "Enrollment date"]
+            )
+
+            row = 0
+            for studySubject in self._studySubjects:
+                # Always mandatory
+                labelItem = QtGui.QStandardItem(studySubject.label)
+                enrollmentDateItem = QtGui.QStandardItem(studySubject.enrollmentDate)
+
+                # Optional
+                secondaryLabelItem = QtGui.QStandardItem("")
+                if studySubject.secondaryLabel is not None:
+                    secondaryLabelItem = QtGui.QStandardItem(studySubject.secondaryLabel)
+
+                # Not everything has to be collected (depend on study setup)
+                pidItem = QtGui.QStandardItem("")
+                genderItem = QtGui.QStandardItem("")
+                if studySubject.subject is not None:
+                    if studySubject.subject.uniqueIdentifier is not None:
+                        pidItem = QtGui.QStandardItem(studySubject.subject.uniqueIdentifier)
+                    if studySubject.subject.gender is not None:
+                        genderItem = QtGui.QStandardItem(studySubject.subject.gender)
+
+                self.subjectsModel.setItem(row, 0, labelItem)
+                self.subjectsModel.setItem(row, 1, pidItem)
+                self.subjectsModel.setItem(row, 2, secondaryLabelItem)
+                self.subjectsModel.setItem(row, 3, genderItem)
+                self.subjectsModel.setItem(row, 4, enrollmentDateItem)
+                row += 1
+
+            # Create a proxy model to enable Sorting and filtering
+            self.studySubjectProxyModel = QtGui.QSortFilterProxyModel()
+            self.studySubjectProxyModel.setSourceModel(self.subjectsModel)
+            # Sorting
+            self.studySubjectProxyModel.setDynamicSortFilter(True)
+            self.studySubjectProxyModel.sort(0, QtCore.Qt.AscendingOrder)
+            # Filtering
+            self.studySubjectProxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+
+            # Connect to filtering UI element
+            QtCore.QObject.connect(
+                self.txtStudySubjectFilter,
+                QtCore.SIGNAL("textChanged(QString)"),
+                self.studySubjectProxyModel.setFilterRegExp
+            )
+
+            # Set the models Views
+            self.tvStudySubjects.setModel(self.studySubjectProxyModel)
+
+            # Resize the width of columns to fit the content
+            self.tvStudySubjects.resizeColumnsToContents()
+
+            # After the view has model, set currentChanged behaviour
+            self.tvStudySubjects.selectionModel().currentChanged.connect(self.tblStudySubjectItemChanged)
+
+            self.tabWidget.setEnabled(True)
+            self.window().statusBar.showMessage("Ready")
+            self.window().disableIndefiniteProgess()        
 
     def loadSubjectsRESTFinished(self, subjects):
         """Finished loading of REST subject data
@@ -842,61 +928,106 @@ class OcModule(QWidget, OcModuleUI):
             self.window().statusBar.showMessage("Ready")
             self.window().disableIndefiniteProgess()
 
-    def loadEventsFinished(self, events):
+    def loadEventsFinished(self, result):
         """Finished loading events data
         """
-        eventsREST = events.toPyObject()
+        if sys.version < "3":
+            resultREST = result.toPyObject()
+        else:
+            resultREST = result
 
-        # Quick way of crating simple viewModel
-        self.eventsModel = QtGui.QStandardItemModel()
-        self.eventsModel.setHorizontalHeaderLabels(["Name", "Description", "Category", "Type", "Repeating", "Start date", "Status"])
+        if type(resultREST) is list:
+            eventsREST = resultREST
+        else:
+            eventsREST = resultREST.studyEventData
 
-        row = 0
-        for event in self._selectedStudySubject.events:
-            nameItem = QtGui.QStandardItem(event.name)
-            descriptionItem = QtGui.QStandardItem(event.description)
-            categoryItem = QtGui.QStandardItem(event.category) 
-            typeItem = QtGui.QStandardItem(event.eventType)
-            isRepeatingItem = QtGui.QStandardItem(str(event.isRepeating))
-            startDateItem = QtGui.QStandardItem("{:%d-%m-%Y}".format(event.startDate))
+        if self._canUseSSIDinREST:
+            self._selectedStudySubject.oid = resultREST.oid
+            self._selectedStudySubject.status = resultREST.status
 
-            # Enhance with information from REST
-            statusItem = QtGui.QStandardItem()
-            for e in eventsREST:
-                if e.eventDefinitionOID == event.eventDefinitionOID and e.startDate.isoformat() == event.startDate.isoformat():
-                    event.status = e.status
-                    event.studyEventRepeatKey = e.studyEventRepeatKey
-                    if event.isRepeating:
-                        nameItem = QtGui.QStandardItem(event.name + " [" + event.studyEventRepeatKey + "]")
-                    statusItem = QtGui.QStandardItem(event.status)
-                    event.forms = e.forms
-            
-            self.eventsModel.setItem(row, 0, nameItem)
-            self.eventsModel.setItem(row, 1, descriptionItem)
-            self.eventsModel.setItem(row, 2, categoryItem)
-            self.eventsModel.setItem(row, 3, typeItem)
-            self.eventsModel.setItem(row, 4, isRepeatingItem)
-            self.eventsModel.setItem(row, 5, startDateItem)
-            self.eventsModel.setItem(row, 6, statusItem)
+            self._logger.debug("Loaded subject key: " + self._selectedStudySubject.oid)
+            self._logger.debug("Loaded subject status: " + self._selectedStudySubject.status)
 
-            row = row + 1
+        # Only show events for available subjects
+        if self._selectedStudySubject.status not in ["removed"]:
 
-        self.studyEventProxyModel = QtGui.QSortFilterProxyModel()
-        self.studyEventProxyModel.setSourceModel(self.eventsModel)
-        self.studyEventProxyModel.setDynamicSortFilter(True)
-        self.studyEventProxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+            # Quick way of crating simple view model
+            self.eventsModel = QtGui.QStandardItemModel()
+            self.eventsModel.setHorizontalHeaderLabels(
+                ["Name", "Description", "Category", "Type", "Repeating", "Start date", "Status"]
+            )
 
-        QtCore.QObject.connect(self.txtStudyEventFilter, QtCore.SIGNAL("textChanged(QString)"), self.studyEventProxyModel.setFilterRegExp)
+            row = 0
+            for event in self._selectedStudySubject.events:
 
-        self.tvStudyEvents.setModel(self.studyEventProxyModel)
+                nameItem = QtGui.QStandardItem(event.name)
+                descriptionItem = QtGui.QStandardItem(event.description)
+                categoryItem = QtGui.QStandardItem(event.category)
+                typeItem = QtGui.QStandardItem(event.eventType)
+                isRepeatingItem = QtGui.QStandardItem(str(event.isRepeating))
+                startDateItem = QtGui.QStandardItem("{:%d-%m-%Y}".format(event.startDate))
 
-        self.tvStudyEvents.resizeColumnsToContents()
-        self.tvStudyEvents.selectionModel().currentChanged.connect(self.tblStudyEventItemChanged)
+                # Enhance with information from REST
+                statusItem = QtGui.QStandardItem()
+                for e in eventsREST:
 
-        # Update status bar
-        self.tabWidget.setEnabled(True)
-        self.window().statusBar.showMessage("Ready")
-        self.window().disableIndefiniteProgess()
+                    soapEventStartDate = "{:%d-%m-%Y}".format(event.startDate)
+                    restEventStartDate = "{:%d-%m-%Y}".format(e.startDate)
+
+                    # Ugly workaround for the stupidity how OC handles missing times when using SOAP (issues with 12/24 hours)
+                    if ((e.eventDefinitionOID == event.eventDefinitionOID and e.startDate.isoformat() == event.startDate.isoformat()) or
+                        (e.eventDefinitionOID == event.eventDefinitionOID and restEventStartDate == soapEventStartDate and "T12:" in e.startDate.isoformat())):
+
+                        # REST event for sync found according to OID and date,
+                        # Add data from REST if it was not already added to domain model before
+                        if not self._selectedStudySubject.scheduledEventOccurrenceExists(e):
+                            event.status = e.status
+                            event.studyEventRepeatKey = e.studyEventRepeatKey
+                            event.forms = e.forms
+
+                        # Set the attributes for view model
+                        if event.isRepeating:
+                            nameItem = QtGui.QStandardItem(event.name + " [" + event.studyEventRepeatKey + "]")
+                        statusItem = QtGui.QStandardItem(event.status)
+
+                        break
+
+                self.eventsModel.setItem(row, 0, nameItem)
+                self.eventsModel.setItem(row, 1, descriptionItem)
+                self.eventsModel.setItem(row, 2, categoryItem)
+                self.eventsModel.setItem(row, 3, typeItem)
+                self.eventsModel.setItem(row, 4, isRepeatingItem)
+                self.eventsModel.setItem(row, 5, startDateItem)
+                self.eventsModel.setItem(row, 6, statusItem)
+
+                row += 1
+
+            self.studyEventProxyModel = QtGui.QSortFilterProxyModel()
+            self.studyEventProxyModel.setSourceModel(self.eventsModel)
+            self.studyEventProxyModel.setDynamicSortFilter(True)
+            self.studyEventProxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+
+            QtCore.QObject.connect(
+                self.txtStudyEventFilter,
+                QtCore.SIGNAL("textChanged(QString)"),
+                self.studyEventProxyModel.setFilterRegExp
+            )
+
+            self.tvStudyEvents.setModel(self.studyEventProxyModel)
+
+            self.tvStudyEvents.resizeColumnsToContents()
+            self.tvStudyEvents.selectionModel().currentChanged.connect(self.tblStudyEventItemChanged)
+
+            # Update status bar
+            self.tabWidget.setEnabled(True)
+            self.window().statusBar.showMessage("Ready")
+            self.window().disableIndefiniteProgess()
+        else:
+            # Update status bar
+            self.tabWidget.setEnabled(True)
+            self.window().statusBar.showMessage("Ready")
+            self.window().disableIndefiniteProgess()
+
 
 ##     ## ########  ######   ######     ###     ######   ########  ######
 ###   ### ##       ##    ## ##    ##   ## ##   ##    ##  ##       ##    ##

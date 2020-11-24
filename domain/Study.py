@@ -1,25 +1,23 @@
-#### ##     ## ########   #######  ########  ########  ######
- ##  ###   ### ##     ## ##     ## ##     ##    ##    ##    ##
- ##  #### #### ##     ## ##     ## ##     ##    ##    ##
- ##  ## ### ## ########  ##     ## ########     ##     ######
- ##  ##     ## ##        ##     ## ##   ##      ##          ##
- ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
-#### ##     ## ##         #######  ##     ##    ##     ######
-
 class Study():
     """Study domain object
-
     According to CDISC Operational Data Model
     """
 
+ ######   #######  ##    ##  ######  ######## ########  ##     ##  ######  ######## 
+##    ## ##     ## ###   ## ##    ##    ##    ##     ## ##     ## ##    ##    ##    
+##       ##     ## ####  ## ##          ##    ##     ## ##     ## ##          ##    
+##       ##     ## ## ## ##  ######     ##    ########  ##     ## ##          ##    
+##       ##     ## ##  ####       ##    ##    ##   ##   ##     ## ##          ##    
+##    ## ##     ## ##   ### ##    ##    ##    ##    ##  ##     ## ##    ##    ##    
+ ######   #######  ##    ##  ######     ##    ##     ##  #######   ######     ##  
+
     def __init__(self, identifier="", oid="", name="", description=""):
-        """Default Constructor
+        """Default constructor
         """
         self._identifier = identifier
 
         # ODM->Study->OID
         self._oid = oid
-
         self._name = name
 
         # ODM->Study->GlobalVariables->StudyDescription
@@ -52,7 +50,8 @@ class Study():
     def oid(self, oidValue):
         """OID Setter
         """
-        self._oid = oidValue
+        if self._oid != oidValue:
+            self._oid = oidValue
 
     @property
     def name(self):
@@ -64,7 +63,8 @@ class Study():
     def name(self, nameValue):
         """Name Setter
         """
-        self._name = nameValue
+        if self._name != nameValue:
+            self._name = nameValue
 
     @property
     def description(self):
@@ -76,7 +76,8 @@ class Study():
     def description(self, descriptionValue):
         """Description Setter
         """
-        self._description = descriptionValue
+        if self._description != descriptionValue:
+            self._description = descriptionValue
 
     @property
     def sites(self):
@@ -96,16 +97,16 @@ class Study():
         """
         return len(self.sites) > 0
 
-##     ## ######## ######## ##     ##  #######  ########   ######  
-###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
-#### #### ##          ##    ##     ## ##     ## ##     ## ##       
-## ### ## ######      ##    ######### ##     ## ##     ##  ######  
-##     ## ##          ##    ##     ## ##     ## ##     ##       ## 
-##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
-##     ## ########    ##    ##     ##  #######  ########   ######  
-    
-    def __repr__(self):
-        """Object representation
+##     ## ######## ######## ##     ##  #######  ########   ######
+###   ### ##          ##    ##     ## ##     ## ##     ## ##    ##
+#### #### ##          ##    ##     ## ##     ## ##     ## ##
+## ### ## ######      ##    ######### ##     ## ##     ##  ######
+##     ## ##          ##    ##     ## ##     ## ##     ##       ##
+##     ## ##          ##    ##     ## ##     ## ##     ## ##    ##
+##     ## ########    ##    ##     ##  #######  ########   ######
+
+    def atrSize(self):
+        """Visible attributes in import tableView
         """
-        adr = hex(id(self)).upper()
-        return "<Study identifier: %s, oid:%s at %s>" % (self.identifier, self.oid, adr)
+        return 3
+                

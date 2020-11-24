@@ -109,6 +109,16 @@ class StudySubject():
 ##     ## ##          ##    ##     ## ##     ## ##     ## ##    ## 
 ##     ## ########    ##    ##     ##  #######  ########   ######  
 
+    def scheduledEventOccurrenceExists(self, query):
+        """Check whether there is scheduled event occurrence with the provided repeat key
+        """
+        for e in self._events:
+            if e.isRepeating:
+                if (e.eventDefinitionOID == query.eventDefinitionOID and e.studyEventRepeatKey == query.studyEventRepeatKey):
+                    return True
+
+        return False
+
     def __repr__(self):
         """Object representation
         """

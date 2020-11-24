@@ -6,6 +6,9 @@
  ##  ##     ## ##        ##     ## ##    ##     ##    ##    ##
 #### ##     ## ##         #######  ##     ##    ##     ######
 
+# System
+import sys
+
 # Logging
 import logging
 import logging.config
@@ -13,14 +16,10 @@ import logging.config
 # Datetime
 from datetime import datetime
 
-# XML
-from xml.dom.minidom import parseString
-
 # SOAP
 import pysimplesoap.client
 from pysimplesoap.client import SoapClient
 from pysimplesoap.simplexml import SimpleXMLElement
-from pysimplesoap.transport import get_http_wrapper, set_http_wrapper
 
 # Preffer C accelerated version of ElementTree for XML parsing
 try:
@@ -38,7 +37,14 @@ STUDYSUBJECTNAMESPACE = "http://openclinica.org/ws/studySubject/v1"
 STUDYSUBJECTACTION = "http://openclinica.org/ws/studySubject/v1"
 
 # Namespace maps for reading of XML
-nsmaps = { 'odm': 'http://www.cdisc.org/ns/odm/v1.3', 'cdisc' : 'http://www.cdisc.org/ns/odm/v1.3', 'OpenClinica' : 'http://www.openclinica.org/ns/odm_ext_v130/v3.1', 'ns2': 'http://openclinica.org/ws/beans', 'ns3' : 'http://openclinica.org/ws/crf/v1', "ns4": "http://openclinica.org/ws/studySubject/v1" }
+nsmaps = {
+    'odm': 'http://www.cdisc.org/ns/odm/v1.3',
+    'cdisc': 'http://www.cdisc.org/ns/odm/v1.3',
+    'OpenClinica': 'http://www.openclinica.org/ns/odm_ext_v130/v3.1',
+    'ns2': 'http://openclinica.org/ws/beans',
+    'ns3': 'http://openclinica.org/ws/crf/v1',
+    "ns4": "http://openclinica.org/ws/studySubject/v1"
+}
 
  ######  ######## ########  ##     ## ####  ######  ########
 ##    ## ##       ##     ## ##     ##  ##  ##    ## ##
@@ -47,6 +53,7 @@ nsmaps = { 'odm': 'http://www.cdisc.org/ns/odm/v1.3', 'cdisc' : 'http://www.cdis
       ## ##       ##   ##    ##   ##   ##  ##       ##
 ##    ## ##       ##    ##    ## ##    ##  ##    ## ##
  ######  ######## ##     ##    ###    ####  ######  ########
+
 
 class OCStudySubjectWsService():
     """StudySubject SOAP web services to OpenClinica
@@ -84,7 +91,9 @@ class OCStudySubjectWsService():
                 ns="v1",
                 trace=isTrace,
                 username=proxyUsr,
-                password=proxyPass)    
+                password=proxyPass)   
+
+        self._logger.info("OC StudySubject SOAP services successfully initialised.")
 
 ##     ## ######## ######## ##     ##  #######  ########   ######  
 ###   ### ##          ##    ##     ## ##     ## ##     ## ##    ## 
@@ -105,20 +114,28 @@ class OCStudySubjectWsService():
         }
 
     def listAllByStudy(self, study, metadata=None):
-        """List all study  subject assinged in specified study
+        """List all study  subject assigned in specified study
         """
-        result = ""
-
-        params = SimpleXMLElement("""<?xml version="1.0" encoding="UTF-8"?>
-            <listAllByStudyRequest>
-            <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:identifier>""" + study.identifier + """</bean:identifier>
-            </bean:studyRef>
-            </listAllByStudyRequest>""")
+        if sys.version < "3":
+            query = u"""<?xml version="1.0" encoding="UTF-8"?>
+                <listAllByStudyRequest>
+                <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
+                <bean:identifier>%s</bean:identifier>
+                </bean:studyRef>
+                </listAllByStudyRequest>""" % study.identifier.decode("utf-8")
+            params = SimpleXMLElement(query.encode("utf-8"))
+        else:
+            query = """<?xml version="1.0" encoding="UTF-8"?>
+                        <listAllByStudyRequest>
+                        <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
+                        <bean:identifier>%s</bean:identifier>
+                        </bean:studyRef>
+                        </listAllByStudyRequest>""" % study.identifier
+            params = SimpleXMLElement(query)
 
         response = self.client.call('listAllByStudyRequest', params)
 
-        documentTree = ET.ElementTree((ET.fromstring(str(response.as_xml()))))
+        documentTree = ET.ElementTree(ET.fromstring(response.as_xml()))
 
         studySubjects = []
 
@@ -129,8 +146,11 @@ class OCStudySubjectWsService():
             enrollmentDate = ""
             uniqueIdentifier = ""
             gender = ""
+            
             # Optional
-            #dateOfBirth = str(studySubject.subject.dateOfBirth)
+            dateOfBirth = ""
+            yearOfBirth = ""
+
             events = []
             for element in studySubject:
                 if (str(element.tag)).strip() == "{http://openclinica.org/ws/beans}label":
@@ -141,11 +161,15 @@ class OCStudySubjectWsService():
                     enrollmentDate = element.text
 
                 if (str(element.tag)).strip() == "{http://openclinica.org/ws/beans}subject":
-                   for subjectElement in element:
+                    for subjectElement in element:
                         if (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}uniqueIdentifier":
                             uniqueIdentifier = subjectElement.text
                         elif (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}gender":
                             gender = subjectElement.text
+                        elif (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}dateOfBirth":
+                            dateOfBirth = subjectElement.text
+                        elif (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}yearOfBirth":
+                            yearOfBirth = subjectElement.text
 
                 if (str(element.tag)).strip() == "{http://openclinica.org/ws/beans}events":
                     for event in element:
@@ -168,12 +192,12 @@ class OCStudySubjectWsService():
                             elif (str(eventElement.tag)).strip() == "{http://openclinica.org/ws/beans}startTime":
                                 timeString = eventElement.text
 
-                        # Deal with both date an datetimes
+                        # Deal with both date an datetime
                         if timeString == "":
                             format = "%Y-%m-%d"
                             startDate = datetime.strptime(dateString, format)
                         else:
-                             # Carefull it uses 12/24 hour format
+                            # Careful it uses 12/24 hour format
                             format12 = "%Y-%m-%d %I:%M:%S"
                             format24 = "%Y-%m-%d %H:%M:%S"
 
@@ -186,6 +210,8 @@ class OCStudySubjectWsService():
                         events.append(obtainedEvent)
 
             obtainedSubject = Subject(uniqueIdentifier, gender)
+            obtainedSubject.dateOfBirth = dateOfBirth
+            obtainedSubject.yearOfBirth = yearOfBirth
             obtainedStudySubject = StudySubject(label, secondaryLabel, enrollmentDate, obtainedSubject, events)
 
             studySubjects.append(obtainedStudySubject)
@@ -202,27 +228,35 @@ class OCStudySubjectWsService():
                         e.isRepeating = me.repeating
                         e.eventType = me.type
                         e.category = me.category
-                        e.mandatory = me.mandatory
-                        e.orderNumber = me.orderNumber
 
         result = str(response.result)
+        self._logger.debug(result)
+
         return studySubjects
 
     def listAllByStudySite(self, study, studySite, metadata=None):
-        """List all study subject assinged in specific study and site
+        """List all study subject assigned in specific study and site
         """
-        result = ""
-
-        params = SimpleXMLElement("""<?xml version="1.0" encoding="UTF-8"?>
-            <listAllByStudyRequest>
-            <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
-            <bean:identifier>""" + studySite.identifier + """</bean:identifier>
-            </bean:studyRef>
-            </listAllByStudyRequest>""")
+        if sys.version < "3":
+            query = u"""<?xml version="1.0" encoding="UTF-8"?>
+                <listAllByStudyRequest>
+                <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
+                <bean:identifier>%s</bean:identifier>
+                </bean:studyRef>
+                </listAllByStudyRequest>""" % studySite.identifier.decode("utf-8")
+            params = SimpleXMLElement(query.encode("utf-8"))
+        else:
+            query = """<?xml version="1.0" encoding="UTF-8"?>
+                        <listAllByStudyRequest>
+                        <bean:studyRef xmlns:bean="http://openclinica.org/ws/beans">
+                        <bean:identifier>%s</bean:identifier>
+                        </bean:studyRef>
+                        </listAllByStudyRequest>""" % studySite.identifier
+            params = SimpleXMLElement(query)
 
         response = self.client.call('listAllByStudyRequest', params)
 
-        documentTree = ET.ElementTree((ET.fromstring(str(response.as_xml()))))
+        documentTree = ET.ElementTree(ET.fromstring(response.as_xml()))
 
         studySubjects = []
 
@@ -233,8 +267,11 @@ class OCStudySubjectWsService():
             enrollmentDate = ""
             uniqueIdentifier = ""
             gender = ""
+            
             # Optional
-            #dateOfBirth = str(studySubject.subject.dateOfBirth)
+            dateOfBirth = ""
+            yearOfBirth = ""
+
             events = []
             for element in studySubject:
                 if (str(element.tag)).strip() == "{http://openclinica.org/ws/beans}label":
@@ -245,11 +282,15 @@ class OCStudySubjectWsService():
                     enrollmentDate = element.text
 
                 if (str(element.tag)).strip() == "{http://openclinica.org/ws/beans}subject":
-                   for subjectElement in element:
+                    for subjectElement in element:
                         if (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}uniqueIdentifier":
                             uniqueIdentifier = subjectElement.text
                         elif (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}gender":
                             gender = subjectElement.text
+                        elif (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}dateOfBirth":
+                            dateOfBirth = subjectElement.text
+                        elif (str(subjectElement.tag)).strip() == "{http://openclinica.org/ws/beans}yearOfBirth":
+                            yearOfBirth = subjectElement.text
 
                 if (str(element.tag)).strip() == "{http://openclinica.org/ws/beans}events":
                     for event in element:
@@ -272,12 +313,12 @@ class OCStudySubjectWsService():
                             elif (str(eventElement.tag)).strip() == "{http://openclinica.org/ws/beans}startTime":
                                 timeString = eventElement.text
 
-                        # Deal with both date an datetimes
+                        # Deal with both date an datetime
                         if timeString == "":
                             format = "%Y-%m-%d"
                             startDate = datetime.strptime(dateString, format)
                         else:
-                            # Carefull it uses 12/24 hour format
+                            # Careful it uses 12/24 hour format
                             format12 = "%Y-%m-%d %I:%M:%S"
                             format24 = "%Y-%m-%d %H:%M:%S"
 
@@ -290,6 +331,8 @@ class OCStudySubjectWsService():
                         events.append(obtainedEvent)
 
             obtainedSubject = Subject(uniqueIdentifier, gender)
+            obtainedSubject.dateOfBirth = dateOfBirth
+            obtainedSubject.yearOfBirth = yearOfBirth
             obtainedStudySubject = StudySubject(label, secondaryLabel, enrollmentDate, obtainedSubject, events)
 
             studySubjects.append(obtainedStudySubject)
@@ -306,11 +349,12 @@ class OCStudySubjectWsService():
                         e.isRepeating = me.repeating
                         e.eventType = me.type
                         e.category = me.category
-                        e.mandatory = me.mandatory
-                        e.orderNumber = me.orderNumber
 
         result = str(response.result)
+        self._logger.debug(result)
+
         return studySubjects
+
 
     def create(self, studySubject, study, metadata=None):
         """Create new StudySubject in OpenClinica
@@ -323,7 +367,7 @@ class OCStudySubjectWsService():
             <createRequest>
             <v1:studySubject xmlns:v1="http://openclinica.org/ws/studySubject/v1">
             <bean:label xmlns:bean="http://openclinica.org/ws/beans">""" + studySubject.label + """</bean:label>
-	    <bean:secondaryLabel xmlns:bean="http://openclinica.org/ws/beans">""" + studySubject.secondaryId + """</bean:secondaryLabel>
+	    <bean:secondaryLabel xmlns:bean="http://openclinica.org/ws/beans">""" + studySubject.secondaryLabel + """</bean:secondaryLabel>
             <bean:enrollmentDate xmlns:bean="http://openclinica.org/ws/beans">
             """ + studySubject.enrollmentDate.isoformat() + """
             </bean:enrollmentDate>

@@ -68,10 +68,10 @@ class NewSubjectDialog(QtGui.QDialog):
         # Based on study subject id generation
         # if manual than specify
         # even if automatic it has to be empty string
-        self.newStudySubject.label = ""
+        self.newStudySubject.label = "xxb"
 
         # Based on metadata (can be optional)
-        self.newStudySubject.subject.uniqueIdentifier = ""
+        self.newStudySubject.subject.uniqueIdentifier = "DD-ST-xxb"
 
     def __setupDialogFieldsUI(self):
         """
